@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heat — The Hidden Risk of AI-Written Code</title>
+<link rel="stylesheet" href="heat-theme.css">
+<style>
+  body {
+    padding: 0;
+    background: var(--heat-bg);
+    color: var(--heat-text);
+  }
+  .section {
+    padding: 76px 32px;
+    border-bottom: 1px solid var(--heat-border);
+  }
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+  .hero {
+    min-height: 92vh;
+    display: flex;
+    align-items: center;
+    padding-top: 44px;
+    padding-bottom: 44px;
+  }
+  .eyebrow {
+    color: var(--heat-amber);
+    font-size: 0.78em;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 4.2em;
+    line-height: 1.02;
+    max-width: 980px;
+    margin: 0 0 24px;
+  }
+  h2 {
+    font-size: 2.7em;
+    line-height: 1.08;
+    margin: 0 0 20px;
+  }
+  h3 {
+    font-size: 1.25em;
+    margin: 0 0 12px;
+    color: var(--heat-text);
+  }
+  p {
+    font-size: 1.08em;
+    line-height: 1.65;
+    color: var(--heat-muted);
+    margin: 0 0 18px;
+  }
+  strong { color: var(--heat-text); }
+  .hero-copy {
+    max-width: 900px;
+    font-size: 1.28em;
+    color: var(--heat-text);
+  }
+  .hero-copy strong { color: var(--heat-flame); }
+  .question {
+    margin-top: 34px;
+    padding-left: 22px;
+    border-left: 4px solid var(--heat-flame);
+    color: var(--heat-text);
+    font-size: 1.35em;
+    line-height: 1.5;
+    max-width: 860px;
+  }
+  .question span {
+    display: block;
+    color: var(--heat-muted);
+    font-size: 0.72em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 34px;
+  }
+  .grid.two { grid-template-columns: repeat(2, 1fr); }
+  .tile {
+    background: var(--heat-surface);
+    border: 1px solid var(--heat-border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .tile .num {
+    color: var(--heat-amber);
+    font-family: 'SF Mono', monospace;
+    font-size: 0.9em;
+    margin-bottom: 12px;
+  }
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin-top: 34px;
+  }
+  .code-card {
+    background: #120906;
+    border: 1px solid var(--heat-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .code-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--heat-border);
+    color: var(--heat-muted);
+    font-size: 0.8em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .code-head.risky { color: var(--heat-flame); }
+  .code-head.safe { color: var(--heat-safe); }
+  pre {
+    margin: 0;
+    padding: 18px;
+    overflow-x: auto;
+    color: #f6e7d8;
+    font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    line-height: 1.55;
+  }
+  .callout {
+    background: linear-gradient(180deg, rgba(255,107,53,0.08), rgba(255,169,77,0.03));
+    border: 1px solid var(--heat-border);
+    border-left: 4px solid var(--heat-flame);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-top: 34px;
+  }
+  .callout p {
+    color: var(--heat-text);
+    font-size: 1.18em;
+    margin: 0;
+  }
+  .tight-list {
+    margin: 22px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 12px;
+    max-width: 920px;
+  }
+  .tight-list li {
+    color: var(--heat-text);
+    font-size: 1.08em;
+    line-height: 1.5;
+    padding-left: 20px;
+    border-left: 3px solid var(--heat-amber);
+  }
+  .tight-list strong {
+    color: var(--heat-flame);
+  }
+  .ladder {
+    display: grid;
+    gap: 14px;
+    margin-top: 32px;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 18px;
+    align-items: start;
+    padding: 18px 0;
+    border-top: 1px solid var(--heat-border);
+  }
+  .step:first-child { border-top: none; }
+  .step-label {
+    color: var(--heat-amber);
+    font-size: 0.78em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .step-body {
+    color: var(--heat-text);
+    font-size: 1.08em;
+    line-height: 1.55;
+  }
+  .footer {
+    padding: 44px 32px;
+    text-align: center;
+    color: var(--heat-muted);
+    font-size: 0.92em;
+  }
+  .footer a {
+    color: var(--heat-amber);
+    text-decoration: none;
+  }
+  .footer a:hover { text-decoration: underline; }
+  @media (max-width: 900px) {
+    .section { padding: 56px 22px; }
+    h1 { font-size: 2.7em; }
+    h2 { font-size: 2.0em; }
+    .grid, .grid.two, .before-after { grid-template-columns: 1fr; }
+    .step { grid-template-columns: 1fr; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<section class="section hero">
+  <div class="wrap">
+    <div class="eyebrow">Not another code review bot</div>
+    <h1>AI is moving the software bottleneck below code review.</h1>
+    <p class="hero-copy">
+      Coding agents make production cheaper. Trust gets harder. Review agents
+      and scanners still read from the outside; they spend tokens and time
+      rediscovering boundaries the program never made explicit.
+    </p>
+    <div class="question">
+      <span>The new question</span>
+      Not just: can the model write code?<br>
+      Can the build make AI-written boundaries explicit before a human or LLM reviewer has to notice them?
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">A simple failure mode</div>
+    <h2>The risky part can look completely normal.</h2>
+    <p>
+      An agent adds a file preview endpoint. The code compiles. The happy-path
+      test passes. The bug is not syntax; the bug is that user input quietly
+      became authority over the filesystem.
+    </p>
+    <div class="before-after">
+      <div class="code-card">
+        <div class="code-head risky">Ordinary code shape</div>
+<pre>fn preview_file(request):
+    name = request.query["name"]
+    path = "uploads/" + name
+    return read_file(path)</pre>
+      </div>
+      <div class="code-card">
+        <div class="code-head safe">The missing invariant</div>
+<pre>user input
+  -> file path
+  -> filesystem read
+
+Was the name validated?
+Can it escape uploads/?
+Who checked that flow?</pre>
+      </div>
+    </div>
+    <div class="callout">
+      <p>
+        The dangerous fact is a dataflow: where the value came from, what it is
+        allowed to become, and which effect it authorizes.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">The obvious answers are useful, but downstream</div>
+    <h2>The risk is not only that code needs more review.</h2>
+    <ul class="tight-list">
+      <li>LLM reviewers, scanners, and stricter prompts catch real bugs.</li>
+      <li>They do not change the substrate the agent wrote into.</li>
+      <li>If user input, secrets, SQL, paths, network, and filesystem effects are ordinary values, every later tool must infer the boundary from context.</li>
+      <li><strong>Costly path:</strong> generate code, pay another model to inspect it, repair, re-review.</li>
+    </ul>
+    <div class="grid">
+      <div class="tile">
+        <div class="num">01</div>
+        <h3>Prompt guardrails are instructions</h3>
+        <p>They can be forgotten, contradicted, or routed around by a later edit. They are not part of the program.</p>
+      </div>
+      <div class="tile">
+        <div class="num">02</div>
+        <h3>Review agents are readers</h3>
+        <p>They inspect a diff after the unsafe shape already exists, and they inherit the same ambiguity as the authoring model.</p>
+      </div>
+      <div class="tile">
+        <div class="num">03</div>
+        <h3>Scanners work from the outside</h3>
+        <p>They are valuable, but they infer from code after it exists. The cheapest boundary is one the build can refuse by construction.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">Shift left, below review</div>
+    <h2>The cheaper control is the one the build can check.</h2>
+    <ul class="tight-list">
+      <li>Agents increase code volume and velocity faster than human review capacity scales.</li>
+      <li>Agentic review adds another paid inference pass over missing structure.</li>
+      <li>Compiler-visible boundaries move the check earlier: before review, before runtime, before rework.</li>
+    </ul>
+    <div class="grid">
+      <div class="tile">
+        <div class="num">01</div>
+        <h3>Review becomes boundary inference</h3>
+        <p>The hard question is no longer only what changed. It is whether an implicit security or authority boundary survived the change.</p>
+      </div>
+      <div class="tile">
+        <div class="num">02</div>
+        <h3>Tests catch examples late</h3>
+        <p>Tests are necessary, but they mostly verify expected behavior. When they catch a boundary bug, the team is already paying rework cost.</p>
+      </div>
+      <div class="tile">
+        <div class="num">03</div>
+        <h3>LLM review still reads from the outside</h3>
+        <p>A review model can scan more code than a human, but it spends tokens and runtime inferring provenance, authority, and effects from context.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">What current languages leave implicit</div>
+    <h2>Most languages express values. They do not express enough boundaries.</h2>
+    <p>
+      Python, TypeScript, Go, and similar languages can express types, modules,
+      functions, and tests. They usually do not make these review questions part
+      of the build artifact.
+    </p>
+    <div class="grid two">
+      <div class="tile">
+        <h3>Where did this value come from?</h3>
+        <p>User input, generated text, trusted config, local file, network response, secret-bearing environment, and database content often collapse into the same string type.</p>
+      </div>
+      <div class="tile">
+        <h3>What is this code allowed to touch?</h3>
+        <p>Filesystem, network, shell, database, credentials, logs, and imported dependencies are usually governed by convention and review, not compiler-visible grants.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">The Heat thesis</div>
+    <h2>Heat makes the boundary part of the program.</h2>
+    <div class="ladder">
+      <div class="step">
+        <div class="step-label">Explicit inputs</div>
+        <div class="step-body">All arguments are named. Ambiguity is reduced because the model has fewer silent choices to get wrong.</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Explicit errors</div>
+        <div class="step-body">Errors are values. The compiler enforces handling instead of relying on hidden exception paths.</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Explicit effects</div>
+        <div class="step-body">Operations that touch the outside world are visible to the type system and review surface.</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Explicit provenance</div>
+        <div class="step-body">Values can carry where they came from, so risky flows can be refused before the program runs.</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Compiler refusal</div>
+        <div class="step-body">When the unsafe shape appears, the answer is not a warning or a style preference. The build stops until the boundary is explicit.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow">The shift</div>
+    <h2>Better models help. They do not remove the need for enforceable boundaries.</h2>
+    <p>
+      The winning agentic-development stack will not be prompts alone. It will
+      combine models with substrates that make the important properties visible:
+      where data came from, which effects are allowed, what obligations remain,
+      and whether the generated code actually discharged them.
+    </p>
+    <div class="callout">
+      <p>
+        Heat is built for that world: AI writes the code, humans review the
+        intent, and the compiler refuses classes of mistakes that should not
+        depend on somebody reading every line.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div>Heat &middot; a language designed for AI-authored code</div>
+  <div><a href="heat_demos.html">Open the interactive demos</a></div>
+</footer>
+
+</body>
+</html>
