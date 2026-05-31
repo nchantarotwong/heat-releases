@@ -1,0 +1,5 @@
+fn main() -> Int [io]:
+    // Hallucinated Python-style constructor 'Int(x)'
+    // Heat uses 'x.to_int()' instead.
+    let n = Int("123")
+    return n

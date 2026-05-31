@@ -1,0 +1,19 @@
+// LLM retry fed the NL-0500 diagnostic back in. The retry used
+// the canonical parameterized form: the SQL string stays a
+// literal (@sql_safe by construction), the user-supplied value
+// rides in params where sqlite escapes it on the bind side.
+fn search_users(db: Db, name: String @user_input) -> Int [io]:
+    match db_exec(db: db, sql: "SELECT * FROM users WHERE name = ?", params: [name]):
+        Result.ok(_n):
+            return 0
+        Result.error(_e):
+            return 1
+
+fn main() -> Int [io]:
+    match db_open(path: ":memory:"):
+        Result.ok(db):
+            search_users(db: db, name: "smith' OR 1=1 --")
+            let _ = db_close(db: db)
+        Result.error(_):
+            return 1
+    return 0

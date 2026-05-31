@@ -1,0 +1,142 @@
+/*
+ * heat-theme.css — Heat's visual identity.
+ *
+ * Dark mode with orange/amber/red heat-like accents.
+ * Used across slide decks, documentation, and any branded output.
+ *
+ * Color palette:
+ *   --heat-flame:    #ff6b35   (primary accent — errors, warnings, hot elements)
+ *   --heat-amber:    #ffa94d   (secondary — highlights, links, interactive)
+ *   --heat-gold:     #ffd43b   (tertiary — subtle emphasis, tags)
+ *   --heat-ember:    #ffb347   (warm mid-tone)
+ *   --heat-safe:     #69db7c   (success, safe paths, green checks)
+ *   --heat-bg:       #0a0a0a   (page background)
+ *   --heat-surface:  #1a1209   (card/code background — warm dark)
+ *   --heat-border:   #332211   (subtle warm borders)
+ *   --heat-text:     #e0e0e0   (primary text)
+ *   --heat-muted:    #888      (secondary text)
+ *   --heat-dim:      #666      (tertiary text)
+ *   --heat-code-bg:  #1a1209   (code block background)
+ */
+
+:root {
+    --heat-flame: #ff6b35;
+    --heat-amber: #ffa94d;
+    --heat-gold: #ffd43b;
+    --heat-ember: #ffb347;
+    --heat-safe: #69db7c;
+    --heat-bg: #0a0a0a;
+    --heat-surface: #1a1209;
+    --heat-border: #332211;
+    --heat-text: #e0e0e0;
+    --heat-muted: #888;
+    --heat-dim: #666;
+    --heat-code-bg: #1a1209;
+    --heat-gradient: linear-gradient(135deg, var(--heat-flame), var(--heat-amber), var(--heat-gold));
+}
+
+/* Base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--heat-bg);
+    color: var(--heat-text);
+}
+
+/* Typography */
+h1, h2 {
+    background: var(--heat-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+h1 { font-size: 3em; font-weight: 700; margin-bottom: 20px; }
+h2 { font-size: 2.2em; font-weight: 600; margin-bottom: 30px; }
+h3 { font-size: 1.4em; font-weight: 500; margin-bottom: 20px; color: var(--heat-muted); }
+p { font-size: 1.3em; line-height: 1.6; margin-bottom: 20px; max-width: 900px; }
+
+/* Semantic colors */
+.accent { color: var(--heat-flame); }
+.green { color: var(--heat-safe); }
+.yellow { color: var(--heat-ember); }
+.blue { color: var(--heat-amber); }
+.dim { color: var(--heat-dim); }
+.neutral { color: var(--heat-text); }
+
+/* Code blocks */
+pre {
+    background: var(--heat-code-bg);
+    border: 1px solid var(--heat-border);
+    border-radius: 12px;
+    padding: 30px;
+    font-size: 1.05em;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+.error-output { background: #1a0f09; border-left: 4px solid var(--heat-flame); }
+.safe-output { background: #0f1a09; border-left: 4px solid var(--heat-safe); }
+
+/* Flow diagrams */
+.flow { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 40px 0; }
+.flow-box {
+    background: var(--heat-surface);
+    border: 2px solid var(--heat-border);
+    border-radius: 12px;
+    padding: 20px 30px;
+    min-width: 500px;
+    text-align: center;
+    font-family: 'SF Mono', monospace;
+    font-size: 1em;
+}
+.flow-box.source { border-color: var(--heat-amber); }
+.flow-box.transform { border-color: var(--heat-ember); }
+.flow-box.sink { border-color: var(--heat-flame); }
+.flow-box.sink-safe { border-color: var(--heat-safe); }
+.flow-box.error { background: #1a0905; border-color: var(--heat-flame); }
+.flow-box.success { background: #0f1a09; border-color: var(--heat-safe); }
+.flow-arrow { font-size: 2em; color: #555; line-height: 1; padding: 5px 0; }
+
+/* Branching variant: two boxes side-by-side under one parent. Used by
+   the heal slide to show deterministic-first / LLM-fallback as a fork. */
+.flow-row { display: flex; flex-direction: row; align-items: stretch; gap: 24px; justify-content: center; }
+.flow-row .flow-box { min-width: 260px; flex: 0 1 360px; }
+.flow-label { font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 0.1em; padding-bottom: 6px; }
+
+/* Three-up info row for sales-pitch callouts (cost / audit / etc). */
+.callout-row { display: flex; gap: 20px; margin-top: 32px; }
+.callout {
+    flex: 1;
+    background: var(--heat-surface);
+    border-left: 3px solid var(--heat-amber);
+    border-radius: 6px;
+    padding: 16px 20px;
+}
+.callout strong { color: var(--heat-amber); display: block; margin-bottom: 6px; font-size: 0.95em; }
+.callout p { font-size: 0.85em; line-height: 1.4; margin: 0; color: #cfcfcf; }
+.callout.safe { border-left-color: var(--heat-safe); }
+.callout.safe strong { color: var(--heat-safe); }
+
+/* Tags */
+.tag { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600; }
+.tag-user { background: #ff6b3533; color: var(--heat-flame); border: 1px solid #ff6b3555; }
+.tag-safe { background: #69db7c33; color: var(--heat-safe); border: 1px solid #69db7c55; }
+.tag-any { background: #ffa94d33; color: var(--heat-amber); border: 1px solid #ffa94d55; }
+
+/* Slides */
+.slide {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    border-bottom: 1px solid #222;
+}
+
+/* Comparison grid */
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 30px 0; }
+.vs > div { border: 1px solid var(--heat-border); border-radius: 12px; padding: 30px; }
+.vs > div:first-child { background: #1a0905; }
+.vs > div:last-child { background: #0f1a09; }
+.vs-label { font-size: 1.1em; font-weight: 600; margin-bottom: 10px; }

@@ -1,0 +1,30 @@
+// LLM retry, fed the NL-0500 diagnostic back in. The retry pipes
+// the response body through escape_sql before it reaches run_query,
+// laundering @user_input → @sql_safe at the boundary. Same agent
+// intent, safe binary.
+
+// Local stand-in for the real `db_query` builtin (which takes a live Db
+// + params); a one-arg @sql_safe sink keeps the demo tiny and runnable.
+fn run_query(sql: String @sql_safe) -> Int [io]:
+    // The point of this demo is the @sql_safe parameter: only laundered
+    // SQL reaches here. Echo it and succeed so the safe binary runs.
+    print(value: format("run_query: {s}", s: sql))
+    return 0
+
+// Stand-in for the real HTTP fetch (the live demo would be
+// `http_get(url: ...)`). It returns an untrusted response body tagged
+// @user_input — deterministically, so the safe binary actually runs the
+// laundering path instead of dying on a network call. The malicious
+// payload mimics what an attacker-controlled upstream might return.
+fn fetch_user_body(user: String @user_input) -> String @user_input [io]:
+    return format("{u}' OR 1=1; DROP TABLE orders; --", u: user)
+
+fn lookup_orders(user: String @user_input) -> Int [io]:
+    let body = fetch_user_body(user: user)
+    // The retry pipes the @user_input body through escape_sql, laundering
+    // it to @sql_safe before it can reach run_query's @sql_safe slot.
+    let safe = escape_sql(raw: body)
+    return run_query(sql: format("SELECT * FROM orders WHERE owner_name = '{n}'", n: safe))
+
+fn main() -> Int [io]:
+    return lookup_orders(user: "alice")

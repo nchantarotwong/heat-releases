@@ -1,0 +1,21 @@
+// The compiler tells you once — at the definition, not N times at the call.
+//
+// `db_query` is a Heat built-in. An LLM that reaches for the name — to
+// stub it (treating Heat like a language where the stdlib must be
+// declared) or to write its own query helper — used to get a confusing
+// "expects 3 argument(s), got 1" at every CALL site, because the call
+// silently dispatched to the 3-arg built-in and ignored the user's
+// 1-arg definition. Heat has no overloading, so the name can't be
+// overridden; it's now refused at the DEFINITION with one clear message
+// that names the cause and the fix.
+//
+// ❌ Expected: error[NL-0279] — does not produce a binary.
+
+fn db_query(sql: String) -> Int [io]:
+    print(value: sql)
+    return 0
+
+fn main() -> Int [io]:
+    // ❌ NL-0279 fired at the definition above. Without it, this call
+    // would dispatch to the built-in and report the built-in's arity.
+    return db_query(sql: "SELECT 1")

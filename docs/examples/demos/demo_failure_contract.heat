@@ -1,0 +1,7 @@
+fn withdraw(balance: Int, amount: Int) -> Int:
+    require amount <= balance, "insufficient funds"
+    return balance - amount
+
+fn main() -> Int [io]:
+    withdraw(balance: 100, amount: 500)
+    return 0

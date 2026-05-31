@@ -1,0 +1,346 @@
+// showcase.heat — A realistic program demonstrating Heat's core features.
+//
+// A user management service with: constrained types, generics, interfaces,
+// effects, contracts, structured reporting, actors, Result/Optional, error
+// propagation, pattern matching, format strings, list literals, and tests
+// next to every function.
+
+
+// --- Domain types with constrained fields ---
+// The compiler rejects invalid literals at compile time.
+// Dynamic values get runtime checks that emit structured JSON reports.
+
+struct User:
+    name: String
+    age: Int(0..150)
+    level: Int(1..3) = 1
+
+struct Team:
+    name: String
+    max_members: Int(1..100) = 10
+
+test "struct defaults and constraints":
+    let user = User(name: "Alice", age: 30)
+    assert user.level == 1
+    let team = Team(name: "Platform")
+    assert team.max_members == 10
+
+
+// --- Enums and exhaustive pattern matching ---
+// The compiler enforces every variant is handled. Missing a case is a
+// compile error, not a runtime surprise.
+
+enum Role:
+    admin
+    editor
+    viewer
+
+fn role_label(role: Role) -> String [pure]:
+    match role:
+        Role.admin:
+            return "Admin"
+        Role.editor:
+            return "Editor"
+        Role.viewer:
+            return "Viewer"
+
+test "exhaustive matching covers all variants":
+    assert role_label(role: Role.admin) == "Admin"
+    assert role_label(role: Role.editor) == "Editor"
+    assert role_label(role: Role.viewer) == "Viewer"
+
+
+// --- Enums with associated data ---
+// Variants can carry typed payloads. Pattern matching destructures them.
+
+enum Action:
+    login(user: String)
+    logout
+    update_role(user: String, new_level: Int)
+
+fn describe_action(action: Action) -> String:
+    match action:
+        Action.login(user: name):
+            return format("Login: {name}", name: name)
+        Action.logout:
+            return "Logout"
+        Action.update_role(user: name, new_level: level):
+            return format("{name} -> level {level}", name: name, level: level)
+
+test "enum with data destructures":
+    assert describe_action(action: Action.logout) == "Logout"
+
+
+// --- Result and Optional: errors are values ---
+// No exceptions. Result[T, E] and Optional[T] are regular enums.
+// The ! operator propagates errors explicitly.
+
+fn try_divide(a: Int, b: Int) -> Result[Int, String]:
+    if b == 0:
+        return Result.error(message: "division by zero")
+    return Result.ok(value: a / b)
+
+fn safe_divide(a: Int, b: Int) -> String:
+    match try_divide(a: a, b: b):
+        Result.ok(value: result):
+            return format("Result: {result}", result: result)
+        Result.error(message: msg):
+            return format("Error: {msg}", msg: msg)
+
+test "Result ok path":
+    assert safe_divide(a: 10, b: 2) == "Result: 5"
+
+test "Result error path":
+    assert safe_divide(a: 10, b: 0) == "Error: division by zero"
+
+
+// --- Interfaces ---
+// No inheritance. Types implement interfaces explicitly.
+// Static dispatch — the compiler knows the concrete type.
+
+interface Describable:
+    fn describe(self) -> String
+
+implement Describable for User:
+    fn describe(self) -> String:
+        return format("{name} (age {age}, level {level})", name: self.name, age: self.age, level: self.level)
+
+implement Describable for Team:
+    fn describe(self) -> String:
+        return format("Team {name}, max {max}", name: self.name, max: self.max_members)
+
+test "interface dispatch on User":
+    let user = User(name: "Alice", age: 30, level: 3)
+    assert user.describe() == "Alice (age 30, level 3)"
+
+test "interface dispatch on Team":
+    let team = Team(name: "Backend")
+    assert team.describe() == "Team Backend, max 10"
+
+
+// --- Generic data structures ---
+// Types inferred from arguments. No explicit [Int, String] needed.
+
+struct Pair[A, B]:
+    first: A
+    second: B
+
+test "generic pair holds mixed types":
+    let pair = Pair(first: 42, second: 99)
+    assert pair.first == 42
+    assert pair.second == 99
+
+
+// --- Generic functions ---
+// Monomorphized: one concrete copy per type combination.
+
+fn identity[T](value: T) -> T:
+    return value
+
+test "generic identity":
+    assert identity(value: 42) == 42
+
+
+// --- Effects ---
+// Functions declare side effects. The compiler enforces them.
+// A [pure] function cannot call [io]. main() and tests are unrestricted.
+
+fn access_score(role_level: Int, tenure: Int) -> Int [pure]:
+    return role_level * tenure + 1
+
+fn log_action(action: String) [io]:
+    print(value: format("[LOG] {action}", action: action))
+
+test "pure function computes correctly":
+    assert access_score(role_level: 3, tenure: 5) == 16
+
+test "io function callable from tests":
+    log_action(action: "test event")
+
+
+// --- Contracts ---
+// require checks preconditions. Violations emit structured JSON reports
+// to stderr with the constraint, actual value, and source location.
+
+fn divide(a: Int, b: Int) -> Int:
+    require b != 0, "divisor must not be zero"
+    return a / b
+
+test "divide with valid args":
+    assert divide(a: 10, b: 2) == 5
+
+
+// --- format() string interpolation ---
+// Named placeholders match named arguments. No positional args.
+
+fn greet(name: String, age: Int) -> String:
+    return format("Hello {name}, you are {age} years old", name: name, age: age)
+
+test "format interpolation":
+    assert greet(name: "Heat", age: 25) == "Hello Heat, you are 25 years old"
+
+
+// --- List literals and for-in iteration ---
+// [1, 2, 3] is the list literal. for is the one way to iterate.
+
+fn sum_range(n: Int) -> Int:
+    var total = 0
+    for i in 0..n:
+        total = total + i
+    return total
+
+test "for range loop":
+    assert sum_range(n: 5) == 10
+
+test "list literal with for-in":
+    var total = 0
+    for x in [10, 20, 30]:
+        total = total + x
+    assert total == 60
+
+test "indexed iteration":
+    var last_idx = 0
+    for val, idx in [10, 20, 30]:
+        last_idx = idx
+    assert last_idx == 2
+
+
+// --- Break and continue ---
+
+test "break exits loop early":
+    var count = 0
+    for x in [1, 2, 3, 4, 5]:
+        if x == 4:
+            break
+        count = count + 1
+    assert count == 3
+
+test "continue skips iteration":
+    var total = 0
+    for i in 0..5:
+        if i == 2:
+            continue
+        total = total + i
+    assert total == 8
+
+
+// --- While and loop ---
+
+test "while loop":
+    var n = 5
+    var sum = 0
+    while n > 0:
+        sum = sum + n
+        n = n - 1
+    assert sum == 15
+
+test "loop with break":
+    var count = 0
+    loop:
+        count = count + 1
+        if count == 3:
+            break
+    assert count == 3
+
+
+// --- Actors ---
+// Isolated state + message passing. No shared mutable state.
+// spawn creates an actor, await waits for a response.
+
+actor Counter:
+    var count: Int = 0
+
+    receive increment() -> Int:
+        count = count + 1
+        return count
+
+    receive get_count() -> Int:
+        return count
+
+test "actor state progression":
+    let counter = spawn Counter()
+    let first = await counter.increment()
+    let second = await counter.increment()
+    assert first == 1
+    assert second == 2
+    assert await counter.get_count() == 2
+
+
+// --- todo() for top-down development ---
+// Type-checked placeholders. The program compiles but panics at runtime.
+// Write the API first, fill in later. No tests — calling these panics.
+
+fn export_report(team: Team) -> String [io]:
+    todo("export team metrics to CSV")
+
+fn send_alert(user: User, message: String) [io]:
+    todo("integrate with alerting service")
+
+
+// --- Provenance: tags on strings that cross trust boundaries ---
+// See examples/provenance_demo.heat for the full worked example.
+// See docs/STDLIB_SURFACE.heat for the complete stdlib surface.
+//
+// Provenance tags track where string values came from. The compiler
+// prevents untrusted data from flowing into security-sensitive sinks
+// (SQL, shell, HTML, paths) without going through a sanitizer or
+// parameterized API. Most code doesn't need annotations — untagged
+// String is polymorphic and passes tags through. Only BOUNDARIES
+// (sources and sinks) need explicit tags.
+
+// A polymorphic helper — no tags, accepts any tagged value and
+// passes the tag through. Most of your code looks like this.
+fn truncate(text: String, max_len: Int) -> String:
+    return text
+
+// A source boundary — data from outside the program is untrusted.
+fn read_username_from_stdin() -> String @user_input [io]:
+    todo("read from stdin")
+
+// A sink boundary — requires a specific tag. Pass user input through
+// the parameterized alternative (see provenance_demo.heat), never
+// concatenate into the SQL string directly.
+fn find_user_by_name(name: String @user_input) -> String [io]:
+    // Not shown: db_exec(db: db, sql: "SELECT ... WHERE name = ?", params: [name])
+    // That's what the full demo in provenance_demo.heat walks through.
+    todo("database query with parameters")
+
+test "polymorphic helpers accept any tag":
+    // Literals are implicitly @literal and promote to any tag
+    let trimmed = truncate(text: "hello", max_len: 3)
+    assert trimmed.length() == 5
+
+
+// --- Main: the demo ---
+
+fn main() -> Int [io]:
+    // Constrained types + interface dispatch
+    let user = User(name: "Alice", age: 30, level: 3)
+    print(value: user.describe())
+
+    let team = Team(name: "Platform", max_members: 50)
+    print(value: team.describe())
+
+    // Generics
+    let pair = Pair(first: 10, second: 20)
+    print(value: format("Pair: {first} + {second}", first: pair.first, second: pair.second))
+
+    // Pattern matching
+    print(value: format("Role: {role}", role: role_label(role: Role.editor)))
+
+    // Result handling
+    print(value: safe_divide(a: 100, b: 4))
+
+    // List literals + for loop
+    var high_count = 0
+    for score in [95, 87, 42, 73, 88]:
+        if score > 80:
+            high_count = high_count + 1
+    print(value: format("High scores: {count}", count: high_count))
+
+    // Actors
+    let counter = spawn Counter()
+    let id = await counter.increment()
+    print(value: format("Counter: {id}", id: id))
+
+    return 0

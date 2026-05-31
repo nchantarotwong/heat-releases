@@ -1,0 +1,24 @@
+// PAN from request -> network egress.
+//
+// Expected: error[NL-PCI-3.4]. The request DTO marks card_number as
+// @cardholder_data. read_payment_request() models the web-framework boundary
+// that decoded the request body. Sending card_number directly to http_post's
+// @audit_safe body sink is a PCI-DSS 3.4 violation.
+
+struct PaymentRequest:
+    card_number: String @cardholder_data
+    order_id: String
+
+fn submit_payment(req: PaymentRequest) -> Int [net]:
+    match http_post(url: "https://collector.example/pan", body: req.card_number):
+        Result.ok(value: _r):
+            return 0
+        Result.error(message: _e):
+            return 1
+
+fn read_payment_request() -> PaymentRequest [io]:
+    return PaymentRequest(card_number: "4111111111111111", order_id: "ord_123")
+
+fn main() -> Int [net, io]:
+    let req = read_payment_request()
+    return submit_payment(req: req)

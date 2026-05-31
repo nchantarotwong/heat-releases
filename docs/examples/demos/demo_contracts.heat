@@ -1,0 +1,34 @@
+// Multi-invariant business rule with `require`. Each line documents
+// a separate precondition the function depends on. A violation
+// emits a structured HEAT-RT-CONTRACT JSON event — machine-readable
+// for the next agent in the pipeline, not a stack trace.
+//
+// Where Python would have a flat sequence of `if not ...: raise`
+// guards (or worse, a `pydantic` model wrapping the args), Heat puts
+// the contract in the function signature where the caller and the
+// next reader both see it without scrolling.
+
+struct Account:
+    holder: String
+    balance: Int
+
+fn transfer(from_acct: Account, to_acct: Account, amount: Int) -> Int:
+    require amount > 0, "amount must be positive"
+    require from_acct.holder != to_acct.holder, "cannot transfer to self"
+    require from_acct.balance >= amount, "insufficient funds"
+    return from_acct.balance - amount
+
+fn main() -> Int [io]:
+    let alice = Account(holder: "alice", balance: 500)
+    let bob = Account(holder: "bob", balance: 100)
+
+    // Happy path — every require holds.
+    let new_balance = transfer(from_acct: alice, to_acct: bob, amount: 200)
+    print(value: format("alice -> bob: 200 ok, alice now {b}", b: new_balance))
+
+    // Violation — third require fails. The structured RT-CONTRACT
+    // event below names the contract code (RT-0200), the file path,
+    // and the human reason ("insufficient funds"). The next agent
+    // can parse it without regexes.
+    transfer(from_acct: alice, to_acct: bob, amount: 9999)
+    return 0

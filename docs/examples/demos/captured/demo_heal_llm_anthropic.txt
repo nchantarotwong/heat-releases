@@ -1,0 +1,58 @@
+$ cat examples/demos/demo_heal_llm.heat
+// LLM wrote this — process_order calls a helper `calculate_subtotal`
+// that was never defined and has no close-name match in scope.
+// Deterministic heal can't guess the body; LLM heal can, because the
+// call site gives enough context: `items: List[Int]` in, used in a
+// later `subtotal * tax_rate` multiplication with a Float, so the
+// return type is reasonable to infer as Float.
+
+fn process_order(items: List[Int], tax_rate: Float) -> Float [pure]:
+    let subtotal = calculate_subtotal(items: items)
+    let tax = subtotal * tax_rate
+    return subtotal + tax
+
+fn main() -> Int [io]:
+    let items: List[Int] = [10, 20, 30]
+    let total = process_order(items: items, tax_rate: 0.08)
+    print(value: total)
+    return 0
+
+$ heatc check examples/demos/demo_heal_llm.heat
+tokens: 99
+instructions: 164
+strings: 16
+error[NL-0212]: Call to undefined function 'calculate_subtotal'
+  --> examples/demos/demo_heal_llm.heat:8:1
+check: 1 error(s)
+
+$ heatc heal examples/demos/demo_heal_llm.heat --llm anthropic
+heal: iter 1: trying LLM for NL-0212 'calculate_subtotal'
+heal: iter 1: applied LLM fix for NL-0212
+heal: iter 2: trying LLM for NL-0212 'float'
+heal: iter 2: applied LLM fix for NL-0212
+heal: iter 3: trying LLM for NL-0263 ''
+heal: iter 3: applied LLM fix for NL-0263
+heal: clean after 3 iteration(s)
+
+$ cat examples/demos/demo_heal_llm.heat # AFTER LLM FIX
+fn calculate_subtotal(items: List[Int]) -> Float [pure]:
+    let sum = 0
+    for item in items:
+        sum = sum + item
+    return sum * 1.0
+
+fn process_order(items: List[Int], tax_rate: Float) -> Float [pure]:
+    let subtotal = calculate_subtotal(items: items)
+    let tax = subtotal * tax_rate
+    return subtotal + tax
+
+fn main() -> Int [io]:
+    let items: List[Int] = [10, 20, 30]
+    let total = process_order(items: items, tax_rate: 0.08)
+    print(value: total)
+    return 0
+
+$ tail -3 ~/.heat/heal-audit.ndjson
+{"file":"45550154848","code":"NL-0212","name":"calculate_subtotal","action":"llm_applied","prev_hash":"cd10277914c893ef3ab0209a4134e8f730a3a57c318490295418b9f0ade2e7b1","this_hash":"917ace51b598aa36040411553501c569e7a79f55f6e6eedf6b445b9e34d8b9fe"}
+{"file":"45550156480","code":"NL-0212","name":"float","action":"llm_applied","prev_hash":"917ace51b598aa36040411553501c569e7a79f55f6e6eedf6b445b9e34d8b9fe","this_hash":"49d864f054841789b40e0a001912cef47d1ae14f31b2af41d5a60a83667e4723"}
+{"file":"45554368704","code":"NL-0263","name":"","action":"llm_applied","prev_hash":"49d864f054841789b40e0a001912cef47d1ae14f31b2af41d5a60a83667e4723","this_hash":"72e145b4aeb3f7ef06b69506ba7bd12738947992155eb2ce1ffb0d17dcdab3ad"}

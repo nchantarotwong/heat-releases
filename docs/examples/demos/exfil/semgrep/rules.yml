@@ -1,0 +1,23 @@
+rules:
+  # These are included demo rules, not a claim about stock Semgrep coverage.
+  # They intentionally catch the calibration log case and plaintext HTTP
+  # hygiene while leaving semantic env-secret-to-requests.post exfil clean.
+  - id: demo-secret-to-log-calibration
+    message: Secret-like environment value is written to a log.
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern-inside: |
+          $SECRET = os.environ[$KEY]
+          ...
+      - pattern-either:
+          - pattern: logging.info(..., $SECRET, ...)
+          - pattern: logging.warning(..., $SECRET, ...)
+          - pattern: logging.error(..., $SECRET, ...)
+          - pattern: logging.critical(..., $SECRET, ...)
+
+  - id: demo-http-url-hygiene
+    message: Plain HTTP URL used for outbound request.
+    severity: WARNING
+    languages: [python]
+    pattern: requests.$METHOD("http://...", ...)

@@ -1,0 +1,15 @@
+// Local stand-in for the real `db_query` builtin (a reserved name — see
+// demo_builtin_shadow.heat); a one-arg @sql_safe sink keeps the demo tiny.
+fn run_query(sql: String @sql_safe) -> Int [io]:
+    todo("run_query")
+
+fn search_users(name: String @user_input) -> Int [io]:
+    // This looks like standard, working code to an LLM.
+    // Heat rejects it because @user_input cannot flow into a 
+    // string slot that hasn't been laundered (@sql_safe).
+    let sql = format("SELECT * FROM users WHERE name = '{n}'", n: name)
+    return run_query(sql: sql)
+
+fn main() -> Int [io]:
+    search_users(name: "smith' OR 1=1 --")
+    return 0

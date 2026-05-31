@@ -1,0 +1,14 @@
+fn add(a: Int, b: Int) -> Int:
+    return a + b
+
+test "add returns correct sum":
+    assert add(a: 2, b: 3) == 5
+
+test "add handles negatives":
+    assert add(a: -1, b: 1) == 0
+
+fn main() -> Int [io]:
+    print(value: "Hello from Heat!")
+    let x = add(a: 10, b: 32)
+    print(value: x)
+    return 0

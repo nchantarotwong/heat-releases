@@ -1,0 +1,68 @@
+// browser_chain_smoke.heat — exercises Locator chaining (within/nth).
+//
+// The example.com page has only one <h1>, so we test by_within with a
+// nested CSS selector and by_nth by indexing the first match. Output
+// proves the JSON is built correctly and the bridge resolves the chain.
+
+import browser
+
+fn main() -> Int [io]:
+    print(value: "[chain] launching...")
+    match browser_launch(browser_kind: "chromium", headless: 1):
+        Result.ok(value: _ok): print(value: "[chain] launched")
+        Result.error(message: e):
+            print(value: "[chain] launch failed: " + e)
+            return 1
+
+    var pid = 0
+    match browser_new_page():
+        Result.ok(value: p): pid = p
+        Result.error(message: e):
+            browser_close()
+            return 1
+
+    match page_goto(page_id: pid, url: "https://example.com", timeout_ms: 30000):
+        Result.ok(value: _s): print(value: "[chain] navigated")
+        Result.error(message: e):
+            print(value: "[chain] goto: " + e)
+            browser_close()
+            return 1
+
+    // within: find an <h1> within <body>. Nested CSS to prove the
+    // bridge resolves a chain rather than a flat selector.
+    let body = css(selector: "body")
+    let inner_h1 = css(selector: "h1")
+    let h1_in_body = within(outer: body, inner: inner_h1)
+    match page_text(page_id: pid, target: h1_in_body, timeout_ms: 5000):
+        Result.ok(value: t):
+            print(value: "[chain] within(body, h1) text: " + t)
+        Result.error(message: e):
+            print(value: "[chain] within failed: " + e)
+            browser_close()
+            return 1
+
+    // nth: pick the first <p>. example.com has multiple <p> elements;
+    // nth(0) picks the first.
+    let p_tag = css(selector: "p")
+    let first_p = nth(target: p_tag, index: 0)
+    match page_text(page_id: pid, target: first_p, timeout_ms: 5000):
+        Result.ok(value: t):
+            print(value: "[chain] nth(p, 0) text starts with: " + t.substring(start: 0, end: 30))
+        Result.error(message: e):
+            print(value: "[chain] nth failed: " + e)
+            browser_close()
+            return 1
+
+    // Composition: nth + within. Pick the first <p> inside <body>.
+    let composed = nth(target: within(outer: body, inner: p_tag), index: 0)
+    match page_text(page_id: pid, target: composed, timeout_ms: 5000):
+        Result.ok(value: t):
+            print(value: "[chain] nth(within(body, p), 0) starts with: " + t.substring(start: 0, end: 30))
+        Result.error(message: e):
+            print(value: "[chain] composed failed: " + e)
+            browser_close()
+            return 1
+
+    browser_close()
+    print(value: "[chain] done")
+    return 0

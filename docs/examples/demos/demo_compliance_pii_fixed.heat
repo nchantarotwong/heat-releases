@@ -1,0 +1,17 @@
+// LLM retry after reading the NL-GDPR-32 diagnostic. The retry routes
+// the email through redact_pii() — the canonical sanitizer for
+// @pii → @audit_safe. The audit log records the signup event with
+// a redacted identifier; the actual email never enters the log
+// stream.
+//
+// GDPR Art. 32 satisfied at compile time. Runtime output:
+//   [INFO] signup · user: [REDACTED] · plan: starter
+
+fn record_signup(user_email: String @pii, plan: String) -> Int [io]:
+    let safe_user = redact_pii(value: user_email)
+    return log_info(message: format("signup · user: {u} · plan: {p}",
+                                    u: safe_user, p: plan))
+
+fn main() -> Int [io]:
+    record_signup(user_email: "alice@example.com", plan: "starter")
+    return 0

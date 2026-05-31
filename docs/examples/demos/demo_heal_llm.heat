@@ -1,0 +1,17 @@
+// LLM wrote this — process_order calls a helper `calculate_subtotal`
+// that was never defined and has no close-name match in scope.
+// Deterministic heal can't guess the body; LLM heal can, because the
+// call site gives enough context: `items: List[Int]` in, used in a
+// later `subtotal * tax_rate` multiplication with a Float, so the
+// return type is reasonable to infer as Float.
+
+fn process_order(items: List[Int], tax_rate: Float) -> Float [pure]:
+    let subtotal = calculate_subtotal(items: items)
+    let tax = subtotal * tax_rate
+    return subtotal + tax
+
+fn main() -> Int [io]:
+    let items: List[Int] = [10, 20, 30]
+    let total = process_order(items: items, tax_rate: 0.08)
+    print(value: total)
+    return 0

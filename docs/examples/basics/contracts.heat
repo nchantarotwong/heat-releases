@@ -1,0 +1,42 @@
+struct ServerConfig:
+    host: String = "0.0.0.0"
+    port: Int
+    max_conn: Int = 100
+
+fn make_config(port: Int) -> ServerConfig:
+    return ServerConfig(port: port)
+
+test "struct defaults fill missing fields":
+    let c = make_config(port: 8080)
+    assert c.port == 8080
+    assert c.max_conn == 100
+
+fn divide(a: Int, b: Int) -> Int:
+    require b != 0, "divisor must not be zero"
+    return a / b
+
+test "divide works with valid args":
+    assert divide(a: 10, b: 2) == 5
+
+fn clamp(value: Int, min_val: Int, max_val: Int) -> Int:
+    require min_val <= max_val, "min must be <= max"
+    if value < min_val:
+        return min_val
+    if value > max_val:
+        return max_val
+    return value
+
+test "clamp constrains value":
+    assert clamp(value: 5, min_val: 0, max_val: 10) == 5
+    assert clamp(value: -5, min_val: 0, max_val: 10) == 0
+    assert clamp(value: 50, min_val: 0, max_val: 10) == 10
+
+fn main() -> Int [io]:
+    let c = make_config(port: 9090)
+    print(value: c.port)
+    print(value: c.max_conn)
+    let result = divide(a: 42, b: 6)
+    print(value: result)
+    let clamped = clamp(value: 150, min_val: 0, max_val: 100)
+    print(value: clamped)
+    return 0

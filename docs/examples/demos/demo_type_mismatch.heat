@@ -1,0 +1,11 @@
+// LLM cross-language muscle memory: Python and JavaScript both happily
+// turn `"user_" + 5` into `"user_5"` (Python coerces, JS concatenates).
+// Heat's type system rejects it at compile time — the operator + is
+// not defined for String and Int. The diagnostic points at the
+// canonical Heat idiom: format("...{n}", n: x).
+
+fn main() -> Int [io]:
+    let user_id = 42
+    let label = "user_" + user_id
+    print(value: label)
+    return 0

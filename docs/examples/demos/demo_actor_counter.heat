@@ -1,0 +1,37 @@
+// Actors — concurrency without locks, no GIL, no data races.
+//
+// An actor's `var` fields are private. The only way to touch them is
+// to send a message via a `receive` handler, and the runtime
+// serializes message processing per actor. Three concurrent senders
+// can't corrupt the count because they can't interleave inside add().
+//
+// Compare to Python: shared state needs threading.Lock and the GIL
+// still serializes Python-level execution; or asyncio with explicit
+// coordination. Compare to Go: goroutines + sync.Mutex (or channels +
+// boilerplate) wrapping every shared field. Compare to Rust: Arc<Mutex<T>>
+// and `.lock().unwrap()` every read. Compare to Heat: send a message.
+
+actor Counter:
+    var count: Int = 0
+
+    receive add(n: Int) -> Void:
+        count = count + n
+
+    receive get_count() -> Int:
+        return count
+
+fn main() -> Int [io]:
+    let c = spawn Counter()
+
+    // Three concurrent sends. The runtime delivers them to the
+    // actor's mailbox; the actor processes them one at a time. No
+    // lock around `count`, no race condition possible.
+    c.add(n: 10)
+    c.add(n: 20)
+    c.add(n: 30)
+
+    // `await` blocks the caller until the actor replies. The reply
+    // is the return value of get_count's body.
+    let final = await c.get_count()
+    print(value: format("count = {n}", n: final))
+    return 0

@@ -1,0 +1,65 @@
+fn string_basics() -> Void [io]:
+    let s = "Hello, Heat!"
+    let len = s.length()
+    print(value: len)
+    let has = s.contains(substring: "Heat")
+    print(value: has)
+    let starts = s.starts_with(prefix: "Hello")
+    print(value: starts)
+
+test "string length":
+    assert "hello".length() == 5
+    assert "".length() == 0
+
+test "string contains":
+    assert "hello world".contains(substring: "world") == 1
+    assert "hello world".contains(substring: "xyz") == 0
+
+test "string starts_with and ends_with":
+    assert "hello".starts_with(prefix: "hel") == 1
+    assert "hello".ends_with(suffix: "llo") == 1
+    assert "hello".starts_with(prefix: "xyz") == 0
+
+test "string to_int":
+    assert "42".to_int() == 42
+    assert "0".to_int() == 0
+
+test "string line extraction":
+    let text = "first\nsecond\nthird"
+    let line0 = text.line(index: 0)
+    assert line0.length() == 5
+    let line1 = text.line(index: 1)
+    assert line1.length() == 6
+
+fn list_basics() -> Void [io]:
+    let nums = List.new()
+    nums.append(value: 10)
+    nums.append(value: 20)
+    nums.append(value: 30)
+    let len = nums.length()
+    print(value: len)
+    let first = nums.get(index: 0)
+    print(value: first)
+
+test "list operations":
+    let items = List.new()
+    assert items.is_empty() == 1
+    items.append(value: 42)
+    items.append(value: 99)
+    assert items.length() == 2
+    assert items.get(index: 0) == 42
+    assert items.get(index: 1) == 99
+    assert items.is_empty() == 0
+
+test "list with loop":
+    let squares = List.new()
+    for i in 0..5:
+        squares.append(value: i * i)
+    assert squares.length() == 5
+    assert squares.get(index: 0) == 0
+    assert squares.get(index: 4) == 16
+
+fn main() -> Int:
+    string_basics()
+    list_basics()
+    return 0

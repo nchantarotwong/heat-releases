@@ -1,0 +1,29 @@
+// Payment-processor scenario an LLM might generate without thinking
+// about PCI-DSS 3.4 ("PAN must be rendered unreadable in storage and
+// in transmission"). Looks like reasonable debugging code; would pass
+// every behavior test on benign inputs; ships the cardholder's full
+// PAN to the audit log.
+//
+// Heat refuses at compile time with NL-PCI-3.4: a value tagged
+// @cardholder_data flowed into log_info, whose `message` parameter
+// requires @audit_safe. The framework-named code (NL-PCI-3.4)
+// displaces the generic NL-0500 because the source tag is
+// compliance-tagged — auditors and LLMs both see the spec citation.
+// The compiler tells the next LLM iteration what's missing — see
+// demo_compliance_pci_fixed.heat for the canonical retry: pipe the
+// PAN through mask_pan() first.
+//
+// Frameworks this enforces against:
+//   - PCI-DSS 3.4    (PAN rendered unreadable)
+//   - GDPR Art. 32   (security of processing personal data)
+//   - SOC 2 CC6.7    (transmission/disposal of confidential information)
+
+fn record_payment(card: String @cardholder_data, amount: Int) -> Int [io]:
+    // The bug: card is @cardholder_data — Heat refuses to let it
+    // reach an audit-log sink without going through mask_pan() or an
+    // equivalent sanitizer. Same machinery as @user_input → @sql_safe.
+    return log_info(message: card)
+
+fn main() -> Int [io]:
+    record_payment(card: "4111111111111111", amount: 4200)
+    return 0
