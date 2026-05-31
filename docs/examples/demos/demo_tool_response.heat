@@ -1,0 +1,28 @@
+// LLM tool-response handling — the canonical agent shape.
+// json_extract[T] decodes the JSON into a typed struct. Heat
+// stamps every String field of the decoded value with @user_input
+// (JSON content is always external input). Trying to feed that
+// String into run_query's @sql_safe slot is rejected at compile
+// time — the compiler stops the SQL injection before the binary
+// is ever built.
+
+struct ToolResp:
+    user_query: String
+
+// Local stand-in for the real `db_query` builtin (a reserved name — see
+// demo_builtin_shadow.heat); a one-arg @sql_safe sink keeps the demo tiny.
+fn run_query(sql: String @sql_safe) -> Int [io]:
+    todo("run_query")
+
+fn handle(raw: String) -> Int [io]:
+    match json_extract[ToolResp](text: raw):
+        Result.ok(r):
+            // ❌ NL-0500: r.user_query carries @user_input from
+            // json_extract; run_query needs @sql_safe. Refused.
+            return run_query(sql: r.user_query)
+        Result.error(message):
+            print(value: message)
+            return 1
+
+fn main() -> Int [io]:
+    return handle(raw: "{\"user_query\": \"smith' OR 1=1 --\"}")

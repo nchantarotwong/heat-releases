@@ -1,0 +1,173 @@
+// provenance_demo.heat — a realistic use of provenance tags.
+//
+// This is a worked example of what "safe by default" means in Heat.
+// The patterns here are familiar from Python/Rust/Java, so the safe
+// approach feels natural rather than imposed.
+//
+// The scenario: a comment-submission handler for a blog. It reads the
+// comment body from an HTTP request, displays it on a page (HTML
+// output), and stores it in a database. All three operations touch
+// provenance in different ways.
+//
+// The stdlib declarations at the top of this file mirror what ships
+// in Heat's real standard library. See docs/STDLIB_SURFACE.heat for
+// the canonical list.
+
+
+// ============================================================================
+// Stdlib stubs (inlined so this file is self-contained)
+// ============================================================================
+
+struct HttpRequest:
+    body_raw: String @user_input = ""
+
+fn http_request_body(req: HttpRequest) -> String @user_input:
+    return req.body_raw
+
+fn http_respond(body: String @html_safe) -> Int [io]:
+    // Stand-in for the real HTTP-response boundary (the web framework).
+    // The contract is the @html_safe parameter — only escaped output
+    // reaches the wire. Echo it so the demo runs.
+    print(value: format("200 OK: {b}", b: body))
+    return 0
+
+// db_open / db_close / db_exec / db_query are real builtins —
+// see docs/STDLIB_SURFACE.heat. They return Result[T, DbError]
+// and the sql arg carries @sql_safe so untrusted strings can
+// only flow in via the params slot (sqlite3_bind_text under
+// the hood).
+//
+// escape_html is a built-in:
+//     escape_html(raw: String @user_input) -> String @html_safe
+
+
+// ============================================================================
+// Application code — the actual comment handler
+// ============================================================================
+
+
+// --- 1. Reading the comment body ---
+//
+// http_request_body returns String @user_input — the HTTP client
+// is untrusted, no exceptions. The tag propagates through any
+// variable you assign it to.
+
+fn get_comment_text(req: HttpRequest) -> String @user_input [io]:
+    return http_request_body(req: req)
+
+
+// --- 2. Storing the comment in the database ---
+//
+// The RIGHT way: db_exec with the user value as a parameter. The SQL
+// string is a literal (auto-tagged @literal, promotes to @sql_safe).
+// The params list accepts @user_input strings — sqlite escapes them
+// at the bind boundary.
+//
+// The WRONG way would be:
+//     db_exec(db: db, sql: "INSERT INTO comments VALUES ('" + body + "')", params: [])
+// which fires NL-0500 at compile time because concatenating a
+// @user_input value with a literal produces @user_input, which isn't
+// assignable to db_exec's @sql_safe sql slot.
+
+fn store_comment(db: Db, body: String @user_input) -> Int [io]:
+    match db_exec(db: db, sql: "INSERT INTO comments (body) VALUES (?)", params: [body]):
+        Result.ok(_n):
+            return 0
+        Result.error(_e):
+            return 1
+
+
+// --- 3. Displaying the comment on an HTML page ---
+//
+// http_respond requires String @html_safe. We upgrade the raw
+// @user_input through escape_html, which is the ONLY legitimate way
+// to produce @html_safe from @user_input. escape_html's signature
+// is the compiler's contract:
+//     escape_html(raw: String @user_input) -> String @html_safe
+// If the escape_html implementation is wrong, the programmer who
+// wrote it owns the bug — but every caller is safe by construction.
+
+fn render_comment(body: String @user_input) -> Int [io]:
+    let safe_body = escape_html(raw: body)
+    return http_respond(body: safe_body)
+
+
+// --- 4. The full handler ---
+//
+// Putting it all together: read the comment, store it, render it.
+// Every step in the flow is type-checked. An LLM writing a new
+// handler like this on first attempt gets it right because the
+// signatures REQUIRE the right pattern — there is no untagged
+// shortcut that happens to work.
+
+fn handle_comment_submission(db: Db, req: HttpRequest) -> Int [io]:
+    let body = get_comment_text(req: req)
+    let _stored = store_comment(db: db, body: body)
+    return render_comment(body: body)
+
+
+// --- 5. What polymorphic functions look like ---
+//
+// Most application code doesn't need tags. Helper functions that
+// just pass values through are polymorphic: they accept any tag
+// and preserve it through the body. No annotation required.
+//
+// This is the escape hatch that prevents annotation fatigue. Only
+// BOUNDARIES (sources and sinks) need explicit tags.
+
+fn log_event(msg: String) [io]:
+    // `msg` is polymorphic — whatever tag the caller has, this
+    // function works. A @user_input comment passed in comes out
+    // as @user_input (if we returned it). A @literal log message
+    // passed in comes out as @literal. The compiler tracks the
+    // flow automatically. Stand-in for a real log sink (file/stderr).
+    print(value: format("[log] {m}", m: msg))
+
+
+// --- 6. Custom tags for domain-specific invariants ---
+//
+// Heat lets you declare your own tags for your application's
+// sanitization rules. The docstring is shown in compiler errors —
+// every mismatch is a teaching moment for the next developer.
+
+tag spam_checked:
+    "A comment that has been run through the spam filter and passed."
+    "Only produced by check_for_spam(). Required by publish_comment()."
+
+fn check_for_spam(body: String @user_input) -> String @spam_checked [io]:
+    // Stand-in for the real spam service. This function is the trusted
+    // PRODUCER of @spam_checked: its declared return type mints the tag,
+    // exactly like escape_html mints @html_safe. A real impl would call
+    // out and only return on a pass; here we vouch for the body directly.
+    return body
+
+fn publish_comment(body: String @spam_checked) -> Int [io]:
+    // Stand-in for the publish sink — accepts only spam-checked content.
+    print(value: format("published: {b}", b: body))
+    return 0
+
+
+// --- The key insight ---
+//
+// Every one of these functions is safer than the equivalent Python
+// or JavaScript not because Heat does anything clever at runtime, but
+// because the compiler refuses to accept the unsafe shape. When an LLM
+// (or a tired developer) writes the wrong code, the error names the
+// specific fix. The second attempt works.
+//
+// You don't have to think about provenance as a feature you opt into.
+// You write the function you need, you use the stdlib, the compiler
+// tells you when you're wrong, you fix it. That's the entire story.
+
+
+fn main() -> Int [io]:
+    // Exercise the happy path that needs no real DB connection: read an
+    // untrusted comment, render it HTML-safe, spam-check it, publish it.
+    // (store_comment / handle_comment_submission above show the db_exec
+    // param pattern; they're type-checked but need a live Db to run.)
+    let req = HttpRequest(body_raw: "<script>alert('xss')</script> great post!")
+    let body = get_comment_text(req: req)
+    log_event(msg: "received a comment")
+    let _rendered = render_comment(body: body)
+    let checked = check_for_spam(body: body)
+    return publish_comment(body: checked)

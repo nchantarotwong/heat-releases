@@ -1,0 +1,17 @@
+// MCP server builder V1: customer-data tool response.
+//
+// The tool explicitly declares that the agent may receive @customer_data.
+// This is the shape for internal support agents where the policy allows
+// customer context but still blocks accidental widening to @public.
+
+struct CustomerTicketContext:
+    ticket_id: String
+    customer_email: String @customer_data
+    summary: String
+
+fn get_customer_ticket_context(email: String @customer_data) -> Result[CustomerTicketContext, String] [net, db] returns @customer_data:
+    let ctx = CustomerTicketContext(ticket_id: "TCK-2048", customer_email: email, summary: "Invoice question")
+    return Result.ok(value: ctx)
+
+fn main() -> Int:
+    return 0

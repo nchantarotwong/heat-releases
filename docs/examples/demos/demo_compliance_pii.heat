@@ -1,0 +1,29 @@
+// User-onboarding logger an LLM might generate without considering
+// GDPR Article 5(1)(c) (data minimization) or Article 32 (security
+// of processing). Looks like reasonable signup-event logging; passes
+// behavior tests; ships the user's full identity (PII) into the
+// general application log.
+//
+// Heat refuses at compile time with NL-GDPR-32: a value tagged @pii
+// flowed into log_info, whose `message` parameter requires
+// @audit_safe. The framework-named code (NL-GDPR-32) displaces
+// the generic NL-0500 because the source tag is compliance-tagged.
+// The compiler points the next LLM iteration at redact_pii() —
+// see demo_compliance_pii_fixed.heat.
+//
+// Frameworks this enforces against:
+//   - GDPR Art. 5(1)(c)  (data minimization — log only what's needed)
+//   - GDPR Art. 32       (security of processing personal data)
+//   - CCPA §1798.150     (statutory damages per affected consumer for
+//                         exposed personal information)
+//   - SOC 2 CC6.7        (transmission of confidential information)
+
+fn record_signup(user_email: String @pii, plan: String) -> Int [io]:
+    // The bug: user_email is @pii — the compiler refuses to let it
+    // reach an audit-log sink without redaction. Same machinery as
+    // @user_input → @sql_safe: source tag + sink requirement + sanitizer.
+    return log_info(message: user_email)
+
+fn main() -> Int [io]:
+    record_signup(user_email: "alice@example.com", plan: "starter")
+    return 0

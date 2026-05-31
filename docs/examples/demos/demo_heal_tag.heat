@@ -1,0 +1,5 @@
+fn search(name: String @untrusted) -> Int:
+    return 0
+
+fn main() -> Int [io]:
+    return 0

@@ -1,0 +1,6 @@
+fn say_hello() [io]:
+    print(value: "hello")
+
+fn main() -> Int [io]:
+    say_halt()
+    return 0

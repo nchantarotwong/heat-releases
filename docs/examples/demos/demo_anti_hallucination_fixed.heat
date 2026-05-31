@@ -1,0 +1,7 @@
+fn main() -> Int [io]:
+    // LLM retry fed the NL-0261 diagnostic back in. The retry used
+    // the canonical form the diagnostic pointed at: Heat has no
+    // constructor-style conversion, only method conversion.
+    let n = "123".to_int()
+    print(value: n)
+    return 0

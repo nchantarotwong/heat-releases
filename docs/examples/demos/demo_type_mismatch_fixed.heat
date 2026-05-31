@@ -1,0 +1,10 @@
+// LLM retry, fed the NL-0214 diagnostic back in. The retry uses
+// Heat's canonical interpolation idiom (format) instead of the
+// cross-language overloaded `+`. Heat refuses ambiguity at compile
+// time so the retry can land deterministically on one shape.
+
+fn main() -> Int [io]:
+    let user_id = 42
+    let label = format("user_{n}", n: user_id)
+    print(value: label)
+    return 0

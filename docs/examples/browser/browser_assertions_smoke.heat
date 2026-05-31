@@ -1,0 +1,52 @@
+// browser_assertions_smoke.heat — same example.com target as
+// browser_smoke.heat, but using expect_* helpers instead of `match
+// Result.ok / Result.error` on every step. Shows the test-framework
+// ergonomics gain: failures panic with a clean message + the test
+// reporter records a fail; successful assertions read like prose.
+//
+// Compare with browser_smoke.heat, which has six `match` blocks plus
+// inline error printing. This file has zero — every assertion is one
+// line, and any failure surfaces as a structured panic.
+//
+// Requires Playwright installed (npm install playwright + npx
+// playwright install chromium). The browser_surface_compiles test in
+// test_self_host.sh exercises just the type signatures so the surface
+// is regression-tested without needing the runtime.
+
+import browser
+
+fn main() -> Int [io]:
+    print(value: "[asserts] launching...")
+    match browser_launch(browser_kind: "chromium", headless: 1):
+        Result.ok(value: _v): print(value: "[asserts] launched")
+        Result.error(message: e):
+            print(value: "[asserts] launch failed: " + e)
+            return 1
+
+    var pid = 0
+    match browser_new_page():
+        Result.ok(value: p): pid = p
+        Result.error(message: e):
+            print(value: "[asserts] new_page failed: " + e)
+            browser_close()
+            return 1
+
+    match page_goto(page_id: pid, url: "https://example.com", timeout_ms: 30000):
+        Result.ok(value: _s): print(value: "[asserts] navigated")
+        Result.error(message: e):
+            print(value: "[asserts] goto: " + e)
+            browser_close()
+            return 1
+
+    // --- Assertions: read as prose, panic on failure ---
+    expect_title(page_id: pid, equals: "Example Domain")
+    expect_url(page_id: pid, equals: "https://example.com/")
+    expect_visible(page_id: pid, target: css(selector: "h1"), timeout_ms: 5000)
+    expect_text(page_id: pid, target: css(selector: "h1"), equals: "Example Domain", timeout_ms: 5000)
+    expect_contains_text(page_id: pid, target: css(selector: "p"), contains: "illustrative examples", timeout_ms: 5000)
+    expect_count(page_id: pid, target: css(selector: "p"), equals: 2)
+    expect_attribute(page_id: pid, target: css(selector: "a"), name: "href", equals: "https://www.iana.org/domains/example")
+
+    print(value: "[asserts] all assertions passed")
+    browser_close()
+    return 0

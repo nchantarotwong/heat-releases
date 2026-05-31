@@ -1,0 +1,47 @@
+// Errors as values, propagated with `!`.
+//
+// Three fallible steps in a pipeline. No try/except, no `if err
+// return err` boilerplate — the `!` operator unwraps Result.ok or
+// short-circuits the whole function with the Result.error.
+//
+// The same error message born in parse_age bubbles up through
+// parse_user and greeting_for unchanged. The caller pattern-matches
+// once at the top — every layer in between is "value or fail".
+
+struct User:
+    name: String
+    age: Int
+
+fn parse_age(text: String) -> Result[Int, String]:
+    if text == "":
+        return Result.error(message: "age cannot be empty")
+    return Result.ok(value: text.to_int())
+
+fn parse_user(name_in: String, age_text: String) -> Result[User, String]:
+    let age = parse_age(text: age_text)!
+    if age < 0:
+        return Result.error(message: format("age must be >= 0, got {a}", a: age))
+    return Result.ok(value: User(name: name_in, age: age))
+
+fn greeting_for(name_in: String, age_text: String) -> Result[String, String]:
+    let user = parse_user(name_in: name_in, age_text: age_text)!
+    return Result.ok(value: format("hello {n}, age {a}", n: user.name, a: user.age))
+
+fn main() -> Int [io]:
+    // Happy path — every step ok, ! unwraps each in turn.
+    match greeting_for(name_in: "ada", age_text: "37"):
+        Result.ok(value: msg):
+            print(value: msg)
+        Result.error(message: e):
+            print(value: format("err: {e}", e: e))
+
+    // Failure case — parse_age returns error; ! short-circuits both
+    // parse_user and greeting_for. The original message reaches main
+    // unchanged. No exception type, no traceback.
+    match greeting_for(name_in: "alan", age_text: ""):
+        Result.ok(value: msg):
+            print(value: msg)
+        Result.error(message: e):
+            print(value: format("err: {e}", e: e))
+
+    return 0

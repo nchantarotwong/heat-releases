@@ -1,0 +1,50 @@
+// Constrained types: the compiler enforces valid ranges
+
+struct Color:
+    r: Int(0..255)
+    g: Int(0..255)
+    b: Int(0..255)
+    a: Int(0..255) = 255
+
+fn make_color(r: Int(0..255), g: Int(0..255), b: Int(0..255)) -> Color:
+    return Color(r: r, g: g, b: b)
+
+test "color fields are constrained":
+    let c = make_color(r: 128, g: 64, b: 255)
+    assert c.r == 128
+    assert c.g == 64
+    assert c.b == 255
+    assert c.a == 255
+
+struct ServerConfig:
+    host: String = "0.0.0.0"
+    port: Int(1..65535) = 8080
+    max_connections: Int(1..10000) = 100
+
+test "server config with constrained defaults":
+    let config = ServerConfig()
+    assert config.port == 8080
+    assert config.max_connections == 100
+
+fn clamp_percent(value: Int) -> Int:
+    if value < 0:
+        return 0
+    if value > 100:
+        return 100
+    return value
+
+test "clamp_percent returns valid range":
+    assert clamp_percent(value: 50) == 50
+    assert clamp_percent(value: -10) == 0
+    assert clamp_percent(value: 200) == 100
+
+fn main() -> Int [io]:
+    let config = ServerConfig(port: 3000)
+    print(value: config.port)
+    print(value: config.max_connections)
+
+    let c = make_color(r: 100, g: 200, b: 50)
+    print(value: c.r)
+    print(value: c.g)
+    print(value: c.b)
+    return 0

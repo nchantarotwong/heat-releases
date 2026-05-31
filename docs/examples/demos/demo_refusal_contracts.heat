@@ -1,0 +1,43 @@
+// Refusal Contracts — a team's security policy, enforced by the compiler.
+//
+// Heat ships with the GDPR / PCI / HIPAA / SOX refusal lattice built in
+// (@pii, @cardholder_data, ... can't reach an audit sink). But every
+// service has data categories the regulators never named: internal
+// customer IDs, partner API keys, model prompts. A Refusal Contract lets
+// a team add ITS OWN rule and have the compiler enforce it exactly like a
+// built-in one — the policy moves out of the wiki and into the language.
+//
+// Here: privacy review SEC-412 ruled that internal customer IDs must
+// never appear verbatim in the audit log. We declare that as an
+// obligation. The broken call below trips it.
+//
+// ❌ Expected: error[NL-OBL-001] — does not produce a binary.
+
+// A project-specific sensitive data category. Not regulated PII — the
+// built-in lattice knows nothing about it. The team defines what it means.
+tag customer_id:
+    "Internal customer identifiers in this service. Privacy review SEC-412
+     ruled these must never appear verbatim in the audit log."
+
+// The obligation IS the policy. `forbid @SRC -> @SINK` is checked at every
+// call site; the docstring and repair line are quoted back in the error.
+obligation NoCustomerIdInAuditLog:
+    "Internal customer IDs must never reach the audit log verbatim."
+    repair "convert to a pseudonymous token via audit_token(raw:) first"
+    forbid @customer_id -> @audit_safe
+
+// The audit-log sink: its @audit_safe parameter is the disclosure
+// boundary. Only values cleared as @audit_safe may cross it.
+fn audit_log(msg: String @audit_safe) -> Int [io]:
+    print(value: format("[audit] {m}", m: msg))
+    return 0
+
+// The source: reading a customer record stamps the id @customer_id.
+fn read_customer_id() -> String @customer_id [io]:
+    return "cust_8842"
+
+fn main() -> Int [io]:
+    let cid = read_customer_id()
+    // ❌ NL-OBL-001: cid carries @customer_id; audit_log needs @audit_safe.
+    // The obligation refuses the flow and cites SEC-412's repair.
+    return audit_log(msg: cid)

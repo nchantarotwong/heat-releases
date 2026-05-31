@@ -1,0 +1,16 @@
+// LLM retry after reading the NL-HIPAA-164 diagnostic. The retry
+// routes the diagnosis through redact_phi() — the canonical sanitizer
+// for @phi → @audit_safe. The audit log records the encounter with a
+// redacted diagnosis; PHI never leaves the boundary.
+//
+// HIPAA 164.514(a) satisfied at compile time. Runtime output:
+//   [INFO] encounter recorded · diagnosis: [REDACTED] · billing: 99213
+
+fn record_encounter(diagnosis: String @phi, billing_code: String) -> Int [io]:
+    let safe_diag = redact_phi(value: diagnosis)
+    return log_info(message: format("encounter recorded · diagnosis: {d} · billing: {b}",
+                                    d: safe_diag, b: billing_code))
+
+fn main() -> Int [io]:
+    record_encounter(diagnosis: "ICD-10 J45.909 (asthma, unspecified)", billing_code: "99213")
+    return 0

@@ -1,0 +1,45 @@
+// demo_run_subprocess.heat — subprocess execution as values, not exceptions.
+//
+// Python's subprocess.run forces the caller to handle three exception
+// types (FileNotFoundError, CalledProcessError, TimeoutExpired) plus
+// flag knobs (capture_output=True, text=True, check=True, timeout=N)
+// to get the equivalent of what Heat's run() returns directly.
+//
+// run(cmd: String) -> Result[RunOk, RunError] [io]
+//
+// On success: Result.ok(value: r) where r.stdout / r.duration_ms
+// On failure: Result.error(message: e) where e carries:
+//   - kind: "command_not_found" | "permission_denied" |
+//           "signaled" | "timeout" | "failed" | ...
+//   - exit_code, stdout (partial), stderr, duration_ms
+//
+// The same data Python forces you to extract from three different
+// exception classes lives in one struct, addressable as values.
+
+fn main() -> Int [io]:
+    // Happy path.
+    match run(cmd: "echo hello from heat"):
+        Result.ok(value: r):
+            print(value: format("ok: {s}", s: r.stdout))
+        Result.error(message: e):
+            print(value: format("unexpected err: {k}", k: e.kind))
+
+    // Command not found — Python would raise FileNotFoundError; Heat
+    // returns Result.error with kind="command_not_found".
+    match run(cmd: "nonexistent-command-xyz-12345"):
+        Result.ok(value: r):
+            print(value: format("unexpected ok: {s}", s: r.stdout))
+        Result.error(message: e):
+            print(value: format("err kind: {k}", k: e.kind))
+            print(value: format("err exit: {c}", c: e.exit_code))
+
+    // Non-zero exit — Python raises CalledProcessError if check=True;
+    // Heat returns the failure as a value with the full context.
+    match run(cmd: "false"):
+        Result.ok(value: r):
+            print(value: format("unexpected ok"))
+        Result.error(message: e):
+            print(value: format("false kind: {k}", k: e.kind))
+            print(value: format("false exit: {c}", c: e.exit_code))
+
+    return 0

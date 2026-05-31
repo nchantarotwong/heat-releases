@@ -1,0 +1,176 @@
+// e2e_login_test.heat — a real E2E login test in Heat.
+//
+// What's different from Playwright (TS or Python)?
+//
+//   1. Locator is an enum — one type, one way per action.
+//      No `page.click(selector)` AND `page.locator(selector).click()`
+//      AND `page.getByRole(...).click()`. Just: `page_click(target: ...)`.
+//
+//   2. Locator chaining is composition over methods. `within(outer:,
+//      inner:)` scopes a search; `nth(target:, index:)` picks a match.
+//      Both are values you can store and reuse. No deferred-query
+//      Locator object going stale under your nose.
+//
+//   3. Errors are Results — `match` or propagate with `!`. No try/catch,
+//      no `expect()` import, no async coloring.
+//
+//   4. Explicit timeouts on every action — no auto-waiting magic, no
+//      "passes locally, flakes in CI" surprises.
+//
+//   5. Crystal-clear errors — every BrowserError variant carries the
+//      exact remediation command in its message.
+//
+//   6. Multi-browser via one flag — chromium, firefox, webkit, brave,
+//      chrome, edge. Same test, switch the launch line.
+//
+//   7. Provenance: page_text/page_title/page_url tag the OK payload
+//      @user_input. Piping into a @sql_safe / @shell_safe / @path_safe
+//      / @html_safe sink fires NL-0500 at compile time. See
+//      examples/browser/dom_provenance_demo.heat.
+//
+// Setup (user installs Playwright separately):
+//   npm install playwright
+//   npx playwright install chromium    # firefox/webkit if you want them
+//   # brave/chrome/edge auto-detected from system installs
+//
+// Run:
+//   heatc test examples/browser/e2e_login_test.heat
+//   heatc test examples/browser/e2e_login_test.heat --report=html
+
+import browser
+
+// Path the test page is staged to. Each test writes the HTML on entry
+// (no shared setup yet — `before_each:` lands in a follow-up).
+let TEST_PAGE_PATH = "/tmp/heat_e2e_login.html"
+
+// Inline HTML for the login form. Two data-testid attributes per
+// field so within(form, test_id(...)) demonstrates scoping. The
+// inline <script> handles the click and updates the status div.
+fn login_page_html() -> String:
+    return "<!doctype html>\n" +
+        "<html><head><title>Demo Login</title></head><body>\n" +
+        "<header><h1>Demo App</h1>\n" +
+        "  <nav data-testid=\"nav\"><a href=\"#home\">Home</a>" +
+        "       <a href=\"#about\">About</a></nav>\n" +
+        "</header>\n" +
+        "<main>\n" +
+        "  <form data-testid=\"login-form\">\n" +
+        "    <label>Username <input data-testid=\"username\"></label>\n" +
+        "    <label>Password <input type=\"password\" data-testid=\"password\"></label>\n" +
+        "    <button type=\"button\" data-testid=\"signin\">Sign In</button>\n" +
+        "  </form>\n" +
+        "  <div data-testid=\"status\">Not signed in</div>\n" +
+        "</main>\n" +
+        "<script>\n" +
+        "document.querySelector('[data-testid=\"signin\"]').addEventListener('click', () => {\n" +
+        "  const u = document.querySelector('[data-testid=\"username\"]').value;\n" +
+        "  const p = document.querySelector('[data-testid=\"password\"]').value;\n" +
+        "  const x = document.querySelector('[data-testid=\"status\"]');\n" +
+        "  if (u === 'alice' && p === 'pw123') {\n" +
+        "    x.textContent = 'Welcome alice';\n" +
+        "  } else {\n" +
+        "    x.textContent = 'Invalid credentials';\n" +
+        "  }\n" +
+        "});\n" +
+        "</script>\n" +
+        "</body></html>\n"
+
+
+// Open the staged HTML in the browser. Returns the page_id on
+// success. Wrapped as Result[Int, String] so callers can `!` propagate.
+// The HTML itself is staged by `before_each:` below.
+fn open_test_page() -> Result[Int, String] [io]:
+    browser_launch(browser_kind: "chromium", headless: 1)!
+    let pid = browser_new_page()!
+    let _ = page_goto(page_id: pid, url: "file://" + TEST_PAGE_PATH, timeout_ms: 30000)!
+    return Result.ok(value: pid)
+
+
+// Submit the form with the given credentials. The within() scoping
+// here is the demo: even if `username` / `password` test-ids appeared
+// elsewhere on the page (in a header search field, say), the form
+// constraint would still find the right inputs.
+fn submit_login(pid: Int, user: String, password: String) -> Result[Int, String] [io]:
+    let form = test_id(id: "login-form")
+    page_fill(page_id: pid, target: within(outer: form, inner: test_id(id: "username")), value: user, timeout_ms: 5000)!
+    page_fill(page_id: pid, target: within(outer: form, inner: test_id(id: "password")), value: password, timeout_ms: 5000)!
+    // Click by role+name — the canonical accessible-button pattern.
+    page_click(page_id: pid, target: role(role: "button", name: "Sign In"), timeout_ms: 5000)!
+    return Result.ok(value: 1)
+
+
+// Read the status div's text. The returned String carries
+// @user_input — see dom_provenance_demo.heat for the NL-0500 angle.
+fn read_status(pid: Int) -> Result[String, String] [io]:
+    let status = page_text(page_id: pid, target: test_id(id: "status"), timeout_ms: 5000)!
+    return Result.ok(value: status)
+
+
+// Per-test setup: stage the HTML once before each test runs. The
+// per-test fork means each test gets a fresh process — anything we
+// stage here is fresh too. Each test still calls open_test_page()
+// to launch the browser and load the page, since browser state
+// can't carry across forked processes.
+before_each:
+    write_file(path: TEST_PAGE_PATH, content: login_page_html())
+
+// Per-test teardown: close the browser. Idempotent; on a passing
+// test the child process exits and reaps Chromium anyway, but
+// calling close explicitly mirrors what a hand-written test would
+// do and makes after_each an obvious place for any future cleanup.
+after_each:
+    browser_close()
+
+// Parameterized test — one block, 3 cases. Each case becomes its own
+// forked test process, named with the values appended (e.g.
+// "credentials path [alice, pw123, Welcome alice]"). Two equivalent
+// header shapes: positional `for (a, b) in [(v1, v2), ...]` (used
+// here) and named `for case in [(a: v1, b: v2), ...]`.
+test "credentials path" for (user, password, expected) in [
+    ("alice", "pw123", "Welcome alice"),
+    ("bob", "wrong", "Invalid credentials"),
+    ("", "", "Invalid credentials"),
+]:
+    var pid = 0
+    match open_test_page():
+        Result.ok(value: p): pid = p
+        Result.error(message: e):
+            print(value: "open failed: " + e)
+            assert false
+    match submit_login(pid: pid, user: user, password: password):
+        Result.ok(value: _ok): print(value: "form submitted")
+        Result.error(message: e):
+            print(value: "submit failed: " + e)
+            assert false
+    match read_status(pid: pid):
+        Result.ok(value: status):
+            print(value: "status: " + status)
+            assert status.contains(substring: expected)
+        Result.error(message: e):
+            print(value: "read_status failed: " + e)
+            assert false
+
+
+test "nav has the expected first link":
+    var pid = 0
+    match open_test_page():
+        Result.ok(value: p): pid = p
+        Result.error(message: e):
+            print(value: "open failed: " + e)
+            assert false
+    // nth() demo: the first link inside the nav. Composes within() for
+    // scope ("inside the nav") with nth() for selection ("the 0th match").
+    let nav = test_id(id: "nav")
+    let first_link = nth(target: within(outer: nav, inner: css(selector: "a")), index: 0)
+    match page_text(page_id: pid, target: first_link, timeout_ms: 5000):
+        Result.ok(value: text):
+            print(value: "first nav link: " + text)
+            assert text == "Home"
+        Result.error(message: e):
+            print(value: "page_text failed: " + e)
+            assert false
+
+
+fn main() -> Int [io]:
+    print(value: "Run with: heatc test examples/browser/e2e_login_test.heat")
+    return 0

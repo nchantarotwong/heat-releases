@@ -1,0 +1,15 @@
+// LLM retry after reading the NL-PCI-3.4 diagnostic. The retry uses
+// the canonical sanitizer: mask_pan() promotes @cardholder_data to
+// @audit_safe by keeping only the last 4 digits ("************1111").
+// The masked string is what reaches log_info; the full PAN never does.
+//
+// PCI-DSS 3.4 satisfied at compile time. Runtime output:
+//   [INFO] payment: ************1111 amount: 4200
+
+fn record_payment(card: String @cardholder_data, amount: Int) -> Int [io]:
+    let masked = mask_pan(card: card)
+    return log_info(message: format("payment: {m} amount: {a}", m: masked, a: amount))
+
+fn main() -> Int [io]:
+    record_payment(card: "4111111111111111", amount: 4200)
+    return 0

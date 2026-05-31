@@ -1,0 +1,73 @@
+// dom_provenance_demo.heat — Heat blocks DOM-text → SQL injection at compile time.
+//
+// `page_text(...)` returns `Result[String, String] @user_input`. The
+// `@user_input` tag rides through `match Result.ok(value: name)` onto
+// `name`. Trying to feed `name` into the `@sql_safe` slot of `db_exec`
+// or `db_query` is a compile-time NL-0500 error.
+//
+// This file shows BOTH paths — the BAD pattern is commented out
+// because the file would otherwise refuse to compile. Uncomment the
+// lines marked `// ❌ NL-0500` to see the error.
+//
+// Why this matters: every Playwright (TS or Python), Cypress, Selenium,
+// or Puppeteer test that reads form input or DOM content and composes
+// it into a SQL string is a SQL injection waiting to happen, with zero
+// help from the framework. Heat catches the entire class at compile time.
+
+import browser
+
+fn handle_username(db: Db, name: String @user_input) -> Int [io]:
+    // ❌ Naive interpolation. Uncomment to see NL-0500:
+    // let _ = db_exec(db: db, sql: format("SELECT * FROM users WHERE name='{n}'", n: name), params: [])
+
+    // ✅ Path 1: parameterized query. The SQL template is a literal
+    // (auto-tagged @literal, promotes to @sql_safe). The user value
+    // rides in params where sqlite3_bind_text escapes it on the wire.
+    let _ = db_exec(db: db, sql: "SELECT * FROM users WHERE name = ?", params: [name])
+
+    // ✅ Path 2: explicit launder. escape_sql converts @user_input
+    // → @sql_safe, so a format()'d sql template type-checks again.
+    let safe = escape_sql(raw: name)
+    let _ = db_exec(db: db, sql: format("SELECT * FROM users WHERE name='{n}'", n: safe), params: [])
+    return 0
+
+fn main() -> Int [io]:
+    match browser_launch(browser_kind: "chromium", headless: 1):
+        Result.ok(value: _ok):
+            print(value: "browser launched")
+        Result.error(message: e):
+            print(value: "launch failed: " + e)
+            return 1
+
+    var pid = 0
+    match browser_new_page():
+        Result.ok(value: p): pid = p
+        Result.error(message: e):
+            browser_close()
+            return 1
+
+    match page_goto(page_id: pid, url: "https://example.com", timeout_ms: 30000):
+        Result.ok(value: _s): print(value: "navigated")
+        Result.error(message: e):
+            print(value: e)
+            browser_close()
+            return 1
+
+    match db_open(path: ":memory:"):
+        Result.ok(handle):
+            // Read DOM text. The returned String carries @user_input — Heat
+            // will block any direct flow into a @sql_safe / @shell_safe /
+            // @path_safe / @html_safe sink.
+            match page_text(page_id: pid, target: css(selector: "h1"), timeout_ms: 5000):
+                Result.ok(value: name):
+                    print(value: "h1 text: " + name)
+                    handle_username(db: handle, name: name)
+                Result.error(message: e):
+                    print(value: e)
+            let _ = db_close(db: handle)
+        Result.error(_):
+            print(value: "db open failed")
+
+    browser_close()
+    print(value: "done — both safe paths executed without compile errors")
+    return 0

@@ -1,0 +1,27 @@
+{
+  "schema_version": "1",
+  "event_type": "mcp.tool_call",
+  "required_fields": [
+    "event_id",
+    "timestamp_unix_ns",
+    "server_id",
+    "tool",
+    "tenant_id",
+    "caller_id",
+    "outcome"
+  ],
+  "fields": {
+    "event_id": "Stable idempotency key for usage ingestion.",
+    "timestamp_unix_ns": "Event time in Unix nanoseconds.",
+    "server_id": "Stable generated MCP server identifier.",
+    "tool": "Tool/function name as emitted in audit_manifest.tool_output_contracts[].tool.",
+    "output_contract": "Declared tool response class, such as public or customer_data.",
+    "tenant_id": "Customer or workspace identifier for chargeback.",
+    "caller_id": "Agent, user, or service principal that invoked the tool.",
+    "outcome": "ok, refused, or error.",
+    "refusal_code": "NL code when outcome is refused.",
+    "duration_ms": "Tool execution latency.",
+    "request_bytes": "Serialized request size.",
+    "response_bytes": "Serialized response size."
+  }
+}

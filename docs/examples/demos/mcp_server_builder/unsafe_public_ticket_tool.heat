@@ -1,0 +1,17 @@
+// MCP server builder V1: unsafe tool response.
+//
+// The tool contract says the agent may only receive @public data, but the
+// returned Result.ok payload carries @pii. Heat refuses this at compile time
+// with NL-MCP-OUT-NL-GDPR-32.
+
+struct TicketContext:
+    ticket_id: String
+    customer_email: String @pii
+    summary: String
+
+fn get_ticket_context(email: String @pii) -> Result[TicketContext, String] [net, db] returns @public:
+    let ctx = TicketContext(ticket_id: "TCK-1024", customer_email: email, summary: "Password reset requested")
+    return Result.ok(value: ctx)
+
+fn main() -> Int:
+    return 0

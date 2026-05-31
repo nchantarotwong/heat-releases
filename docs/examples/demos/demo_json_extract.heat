@@ -1,0 +1,41 @@
+// json_extract[T] — typed JSON decode in one call. The struct shape
+// IS the schema; the compiler checks field names at decode time.
+//
+// Returns Result[T, String] — three outcomes:
+//   - Result.ok(value: t)      — every required field present
+//   - Result.error("missing field 'X'") — schema mismatch named exactly
+//   - Result.error("invalid JSON")      — parse failed
+//
+// Compare to Python: json.loads() returns a dict; you'd write
+// dict["name"], hit KeyError or `.get()` everywhere, and learn the
+// shape was wrong only when something downstream tries to use a
+// missing key. Heat surfaces the schema mismatch at the decode call,
+// before any downstream code runs.
+
+struct Order:
+    id: Int
+    item: String
+    qty: Int
+
+fn handle(raw: String) -> Int [io]:
+    match json_extract[Order](text: raw):
+        Result.ok(value: o):
+            print(value: format("order #{i}: {q} x {t}", i: o.id, q: o.qty, t: o.item))
+        Result.error(message: e):
+            // The error names the field, not just "schema mismatch"
+            // — the LLM (or the next pipeline stage) can act on it.
+            print(value: format("decode failed: {e}", e: e))
+    return 0
+
+fn main() -> Int [io]:
+    // Happy path — all three fields present.
+    handle(raw: "{\"id\": 7, \"item\": \"widget\", \"qty\": 3}")
+
+    // Missing field — payload omits qty. Decoder names it.
+    handle(raw: "{\"id\": 8, \"item\": \"gadget\"}")
+
+    // Malformed JSON — not even the right shape. Decoder reports
+    // invalid JSON rather than picking through fields.
+    handle(raw: "this is not json at all")
+
+    return 0

@@ -1,0 +1,14 @@
+// Heat catches the user-input → path sink at compile time, and
+// `heatc heal` rewrites the call to pipe through `escape_path`.
+//
+// Run:  heatc heal examples/demos/demo_heal_launderer.heat
+// After heal: read_file(path: escape_path(input: user_path))
+
+fn main() -> Int [io]:
+    let user_path = read_line()
+    match read_file(path: escape_path(input: user_path)):
+        Result.ok(value: contents):
+            print(value: contents)
+        Result.error(value: _):
+            return 1
+    return 0

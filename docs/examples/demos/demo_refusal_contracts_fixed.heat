@@ -1,0 +1,43 @@
+// Refusal Contracts — the repair. Same policy, same intent, safe binary.
+//
+// The broken twin (demo_refusal_contracts.heat) logged a raw @customer_id
+// and was refused by the project obligation NoCustomerIdInAuditLog. The
+// fix is the one the diagnostic named: route the id through a vetted
+// redactor that hashes it to a stable pseudonymous token before logging.
+//
+// audit_token's signature is the team's attestation: it consumes a
+// @customer_id and returns an @audit_safe value. Declaring @audit_safe on
+// the return is what mints the cleared tag — only this vetted function can
+// do it, so the obligation can't be bypassed by relabeling. After it runs,
+// the value reaching audit_log is @audit_safe and the flow is permitted.
+//
+// ✅ Builds and runs clean.
+
+tag customer_id:
+    "Internal customer identifiers in this service. Privacy review SEC-412
+     ruled these must never appear verbatim in the audit log."
+
+obligation NoCustomerIdInAuditLog:
+    "Internal customer IDs must never reach the audit log verbatim."
+    repair "convert to a pseudonymous token via audit_token(raw:) first"
+    forbid @customer_id -> @audit_safe
+
+fn audit_log(msg: String @audit_safe) -> Int [io]:
+    print(value: format("[audit] {m}", m: msg))
+    return 0
+
+fn read_customer_id() -> String @customer_id [io]:
+    return "cust_8842"
+
+// The vetted launderer. It takes a @customer_id and returns @audit_safe —
+// the one place the team allows a customer id to cross into audit-cleared
+// data, by replacing it with a non-reversible hash. sha256 of the id is a
+// stable token: the audit trail can correlate events without exposing who.
+fn audit_token(raw: String @customer_id) -> String @audit_safe:
+    return sha256(input: raw)
+
+fn main() -> Int [io]:
+    let cid = read_customer_id()
+    // ✅ audit_token relabels @customer_id -> @audit_safe. The value
+    // reaching audit_log is now cleared; the obligation is satisfied.
+    return audit_log(msg: audit_token(raw: cid))

@@ -1,0 +1,27 @@
+// LLM retry, fed the NL-0500 diagnostic back in. The retry
+// pipes the decoded String through escape_sql before it reaches
+// run_query — laundering @user_input → @sql_safe at the
+// boundary. Same agent intent, safe binary.
+
+struct ToolResp:
+    user_query: String
+
+// Local stand-in for the real `db_query` builtin (which takes a live Db
+// + params); a one-arg @sql_safe sink keeps the demo tiny and runnable.
+fn run_query(sql: String @sql_safe) -> Int [io]:
+    // The point of this demo is the @sql_safe parameter: only laundered
+    // SQL reaches here. Echo it and succeed so the safe binary runs.
+    print(value: format("run_query: {s}", s: sql))
+    return 0
+
+fn handle(raw: String) -> Int [io]:
+    match json_extract[ToolResp](text: raw):
+        Result.ok(r):
+            let safe = escape_sql(raw: r.user_query)
+            return run_query(sql: safe)
+        Result.error(message):
+            print(value: message)
+            return 1
+
+fn main() -> Int [io]:
+    return handle(raw: "{\"user_query\": \"smith' OR 1=1 --\"}")

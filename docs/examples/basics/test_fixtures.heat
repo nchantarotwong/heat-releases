@@ -1,0 +1,52 @@
+// test_fixtures.heat — pytest-style test structure in Heat.
+//
+// Tests live next to the helper code they exercise. before_each and
+// after_each give each test a predictable local fixture, while the
+// parameterized test expands into one named case per tuple.
+//
+// Run:
+//   heatc test examples/basics/test_fixtures.heat
+
+let FIXTURE_PATH = "/tmp/heat_fixture_demo.txt"
+
+fn subtotal(unit_price: Int, quantity: Int) -> Int:
+    require unit_price >= 0, "unit price must be non-negative"
+    require quantity >= 0, "quantity must be non-negative"
+    return unit_price * quantity
+
+test "subtotal multiplies valid rows" for (unit_price, quantity, expected) in [
+    (0, 10, 0),
+    (7, 3, 21),
+    (42, 1, 42),
+]:
+    assert subtotal(unit_price: unit_price, quantity: quantity) == expected
+
+test "fixture can feed a parameterized helper" for (quantity, expected) in [
+    (1, 5),
+    (4, 20),
+]:
+    match read_file(path: FIXTURE_PATH):
+        Result.ok(value: content):
+            assert content == "fixture ready"
+        Result.error(message: e):
+            print(value: e)
+            assert false
+    assert subtotal(unit_price: 5, quantity: quantity) == expected
+
+before_each:
+    write_file(path: FIXTURE_PATH, content: "fixture ready")
+
+after_each:
+    write_file(path: FIXTURE_PATH, content: "")
+
+test "fixture file is staged before each test":
+    match read_file(path: FIXTURE_PATH):
+        Result.ok(value: content):
+            assert content == "fixture ready"
+        Result.error(message: e):
+            print(value: e)
+            assert false
+
+fn main() -> Int [io]:
+    print(value: "Run with: heatc test examples/basics/test_fixtures.heat")
+    return 0

@@ -1,0 +1,51 @@
+actor Counter:
+    var count: Int = 0
+
+    receive increment() -> Void:
+        count = count + 1
+
+    receive add(n: Int) -> Void:
+        count = count + n
+
+    receive get_count() -> Int:
+        return count
+
+test "counter starts at zero":
+    let c = spawn Counter()
+    let n = await c.get_count()
+    assert n == 0
+
+test "increment increases count":
+    let c = spawn Counter()
+    c.increment()
+    c.increment()
+    c.increment()
+    let n = await c.get_count()
+    assert n == 3
+
+test "add increases by amount":
+    let c = spawn Counter()
+    c.add(n: 10)
+    c.add(n: 5)
+    let n = await c.get_count()
+    assert n == 15
+
+test "multiple actors are independent":
+    let a = spawn Counter()
+    let b = spawn Counter()
+    a.increment()
+    a.increment()
+    b.increment()
+    let na = await a.get_count()
+    let nb = await b.get_count()
+    assert na == 2
+    assert nb == 1
+
+fn main() -> Int [io]:
+    let c = spawn Counter()
+    c.increment()
+    c.increment()
+    c.increment()
+    let n = await c.get_count()
+    print(value: n)
+    return 0

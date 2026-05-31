@@ -1,0 +1,9 @@
+fn needs_io() [io]:
+    print(value: "io")
+
+fn calls_io() -> Int:
+    needs_io()
+    return 0
+
+fn main() -> Int [io]:
+    return calls_io()

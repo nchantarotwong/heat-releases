@@ -1,0 +1,30 @@
+// Patient-encounter logger an LLM might generate without thinking
+// about HIPAA. Looks like reasonable billing-audit code; passes
+// behavior tests on benign inputs; logs the full diagnosis (PHI) to
+// an unrestricted audit channel.
+//
+// Heat refuses at compile time with NL-HIPAA-164: a value tagged
+// @phi flowed into log_info, whose `message` parameter requires
+// @audit_safe. The framework-named code (NL-HIPAA-164) displaces
+// the generic NL-0500 because the source tag is compliance-tagged.
+// The compiler points the next LLM iteration at redact_phi() —
+// see demo_compliance_hipaa_fixed.heat.
+//
+// Frameworks this enforces against:
+//   - HIPAA Privacy Rule 164.514(a)  (de-identification of PHI)
+//   - HIPAA Security Rule 164.312(b) (audit controls — restrict PHI
+//                                     in log streams to authorized
+//                                     access only; unredacted PHI in
+//                                     a general log fails this)
+//   - HITECH Act §13402 (breach notification — every PHI exposure
+//                        is a reportable incident at this scale)
+
+fn record_encounter(diagnosis: String @phi, billing_code: String) -> Int [io]:
+    // The bug: diagnosis is @phi — the compiler refuses to let it
+    // reach an audit-log sink without going through redact_phi() or
+    // an equivalent sanitizer. Same machinery as @user_input → @sql_safe.
+    return log_info(message: diagnosis)
+
+fn main() -> Int [io]:
+    record_encounter(diagnosis: "ICD-10 J45.909 (asthma, unspecified)", billing_code: "99213")
+    return 0

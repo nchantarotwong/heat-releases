@@ -1,0 +1,14 @@
+// The fix the NL-0279 diagnostic names: rename your function. Built-in
+// names are reserved (Heat has no overloading), so a one-word rename —
+// db_query → run_query — and the same code compiles and runs. The model
+// gets one error, at the definition, with the repair; the retry is a
+// rename, not a hunt through call-site arity errors.
+//
+// ✅ Builds and runs clean.
+
+fn run_query(sql: String) -> Int [io]:
+    print(value: format("run_query: {s}", s: sql))
+    return 0
+
+fn main() -> Int [io]:
+    return run_query(sql: "SELECT 1")
