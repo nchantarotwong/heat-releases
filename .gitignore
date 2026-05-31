@@ -1,0 +1,8 @@
+# Release assets belong on GitHub Releases, not in git.
+*.tar.gz
+SHA256SUMS
+dist/
+
+# Local Homebrew/test output.
+*.log
+.DS_Store

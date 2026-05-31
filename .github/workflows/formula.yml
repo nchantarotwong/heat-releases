@@ -1,0 +1,38 @@
+name: Formula
+
+on:
+  pull_request:
+    paths:
+      - Formula/**
+      - .github/workflows/formula.yml
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check for formula
+        id: formula
+        run: |
+          if [ -f Formula/heat.rb ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Formula/heat.rb does not exist yet; skipping audit."
+          fi
+
+      - name: Audit formula
+        if: steps.formula.outputs.exists == 'true'
+        run: |
+          brew tap nchantarotwong/heat-releases "$PWD"
+          brew audit --strict --formula nchantarotwong/heat-releases/heat
+
+      - name: Install formula
+        if: steps.formula.outputs.exists == 'true'
+        run: |
+          brew install --formula nchantarotwong/heat-releases/heat
+          heat-mcp doctor-install
