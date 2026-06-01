@@ -1,0 +1,4 @@
+// A payments dependency that talks to exactly one host.
+fn charge() -> Int [net]:
+    let _ = http_get(url: "https://api.stripe.com/v1/charges")
+    return 0

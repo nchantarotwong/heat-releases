@@ -1,22 +1,22 @@
 class Heat < Formula
   desc "AI-authored programming language and policy-checked MCP builder"
   homepage "https://github.com/nchantarotwong/heat-releases"
-  version "0.7.5"
+  version "0.7.6"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.5/heat-darwin-arm64.tar.gz"
-      sha256 "75d49233786c4f887e876df4a5af88e5baf55a1cd0cb5168b70160384141b160"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.6/heat-darwin-arm64.tar.gz"
+      sha256 "f49b2dbf9ae2d78bd27e9f11865d7325a8103aaa9db0cf70e977d4f46fac7a25"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.5/heat-linux-arm64.tar.gz"
-      sha256 "5c35013ad2cc53005ef2a605e54cf84ab4fa1d85fa590dfc4a6ee5ff83d955b2"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.6/heat-linux-arm64.tar.gz"
+      sha256 "55fbee867ddccce92c0d70810efdf75e7a9a26e41b598a9045142906f1b1108a"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.5/heat-linux-x86_64.tar.gz"
-      sha256 "2c067d65ff7db77b88f591f42b01102e0cf377d49ca9897cb73e8dbc1b15c65f"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.6/heat-linux-x86_64.tar.gz"
+      sha256 "0b4045e67ebe53e4f0a6bc8f5e2b03d9a8cf2f52f38f515d73f745d076f5fe3c"
     end
   end
 
@@ -110,13 +110,19 @@ class Heat < Formula
       fi
       exec "#{bin}/heatc" mcp "$@"
     SH
+    (bin/"heatcheck").write <<~SH
+      #!/bin/bash
+      exec "#{libexec}/bin/heatcheck" "$@"
+    SH
     chmod 0755, bin/"heatc"
     chmod 0755, bin/"heat-mcp"
+    chmod 0755, bin/"heatcheck"
   end
 
   test do
     assert_match "heatc", shell_output("#{bin}/heatc version")
     assert_match "heatc mcp", shell_output("#{bin}/heat-mcp help")
+    assert_match "heatcheck", shell_output("#{bin}/heatcheck --version")
     assert_match "MCP Builder install doctor ok", shell_output("PATH=#{bin}:$PATH #{bin}/heat-mcp doctor-install")
   end
 end

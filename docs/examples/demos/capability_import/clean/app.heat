@@ -1,0 +1,11 @@
+// The app allows the payments dependency to reach only api.stripe.com.
+// This clean dependency stays inside that grant, so the import checks
+// successfully.
+dependency stripe_only:
+    allow net host: "api.stripe.com"
+
+import payments with capability stripe_only
+
+fn main() -> Int [io]:
+    print(value: "ok")
+    return 0

@@ -1,0 +1,12 @@
+// The app allows the payments dependency to reach only api.stripe.com.
+// Heat checks the imported module against that grant. This dependency release
+// added a call to evil.example, so the import is refused with NL-CAP-5 before
+// the application can ship.
+dependency stripe_only:
+    allow net host: "api.stripe.com"
+
+import payments with capability stripe_only
+
+fn main() -> Int [io]:
+    print(value: "ok")
+    return 0
