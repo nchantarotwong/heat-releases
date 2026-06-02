@@ -1,22 +1,22 @@
 class Heat < Formula
   desc "AI-authored programming language and policy-checked MCP builder"
   homepage "https://github.com/nchantarotwong/heat-releases"
-  version "0.7.6"
+  version "0.7.7"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.6/heat-darwin-arm64.tar.gz"
-      sha256 "f49b2dbf9ae2d78bd27e9f11865d7325a8103aaa9db0cf70e977d4f46fac7a25"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.7/heat-darwin-arm64.tar.gz"
+      sha256 "446e6c05e9c3a8c15850bc571e9ac2f1986f37c2ea9690e27e99271dabf3f4f4"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.6/heat-linux-arm64.tar.gz"
-      sha256 "55fbee867ddccce92c0d70810efdf75e7a9a26e41b598a9045142906f1b1108a"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.7/heat-linux-arm64.tar.gz"
+      sha256 "2d2ef0a118f4661de80c76e88310b81a74906e1f504e716705b6c5505052c75c"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.6/heat-linux-x86_64.tar.gz"
-      sha256 "0b4045e67ebe53e4f0a6bc8f5e2b03d9a8cf2f52f38f515d73f745d076f5fe3c"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.7.7/heat-linux-x86_64.tar.gz"
+      sha256 "110333b4dae7e8d52b2898d3a17e5e8afbde735771689ebbe05e0163b3966587"
     end
   end
 

@@ -1,0 +1,59 @@
+// Same auditor request, second draft: the worker emits control evidence and
+// sanitized audit facts. Raw customer data never reaches the audit channel.
+
+fn collect_soc2_cloud_config() -> String @audit_safe:
+    return "soc2 cloud_config: s3_access_logging=enabled; iam_mfa_required=true"
+
+test "soc2 cloud evidence names reviewed controls":
+    let evidence = collect_soc2_cloud_config()
+    assert evidence.contains(substring: "s3_access_logging=enabled") == 1
+    assert evidence.contains(substring: "iam_mfa_required=true") == 1
+
+fn collect_database_metadata() -> String @audit_safe:
+    return "database_metadata: encrypted_backups=enabled; readonly_role=auditor"
+
+test "database metadata evidence excludes row contents":
+    let evidence = collect_database_metadata()
+    assert evidence.contains(substring: "encrypted_backups=enabled") == 1
+    assert evidence.contains(substring: "readonly_role=auditor") == 1
+
+fn pci_payment_evidence(card: String @cardholder_data) -> String @audit_safe:
+    let masked = mask_pan(card: card)
+    return format("pci payment_evidence: pan={p}; control=masked-before-audit", p: masked)
+
+test "pci evidence keeps only a masked PAN":
+    let evidence = pci_payment_evidence(card: "4111111111111111")
+    assert evidence.contains(substring: "************1111") == 1
+    assert evidence.contains(substring: "4111111111111111") == 0
+
+fn hipaa_encounter_evidence(diagnosis: String @phi) -> String @audit_safe:
+    let redacted = redact_phi(value: diagnosis)
+    return format("hipaa encounter_evidence: diagnosis={d}; control=deidentified-before-audit", d: redacted)
+
+test "hipaa evidence redacts diagnosis":
+    let evidence = hipaa_encounter_evidence(diagnosis: "HIV positive")
+    assert evidence.contains(substring: "[REDACTED]") == 1
+    assert evidence.contains(substring: "HIV positive") == 0
+
+fn gdpr_subject_evidence(email: String @pii) -> String @audit_safe:
+    let redacted = redact_pii(value: email)
+    return format("gdpr subject_evidence: email={e}; control=redacted-before-audit", e: redacted)
+
+test "gdpr evidence redacts the subject email":
+    let evidence = gdpr_subject_evidence(email: "patient@example.com")
+    assert evidence.contains(substring: "[REDACTED]") == 1
+    assert evidence.contains(substring: "patient@example.com") == 0
+
+fn publish_evidence_packet(card: String @cardholder_data, diagnosis: String @phi, email: String @pii) -> Int [io]:
+    log_info(message: collect_soc2_cloud_config())
+    log_info(message: collect_database_metadata())
+    log_info(message: pci_payment_evidence(card: card))
+    log_info(message: hipaa_encounter_evidence(diagnosis: diagnosis))
+    return log_info(message: gdpr_subject_evidence(email: email))
+
+fn main() -> Int [io]:
+    return publish_evidence_packet(
+        card: "4111111111111111",
+        diagnosis: "HIV positive",
+        email: "patient@example.com",
+    )
