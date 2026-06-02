@@ -1,0 +1,41 @@
+// A compliance team asks an AI-authored worker to collect evidence for an
+// audit packet. The worker gathers the right facts, but the first draft tries
+// to include raw regulated values in the audit channel.
+//
+// Heat refuses these before the worker can run:
+// - cardholder data -> audit log: PCI-DSS 3.4
+// - PHI -> audit log: HIPAA 45 CFR 164
+// - PII -> audit log: GDPR Article 32
+
+fn collect_soc2_cloud_config() -> String @audit_safe:
+    return "soc2 cloud_config: s3_access_logging=enabled; iam_mfa_required=true"
+
+test "soc2 cloud evidence names reviewed controls":
+    let evidence = collect_soc2_cloud_config()
+    assert evidence.contains(substring: "s3_access_logging=enabled") == 1
+    assert evidence.contains(substring: "iam_mfa_required=true") == 1
+
+fn collect_database_metadata() -> String @audit_safe:
+    return "database_metadata: encrypted_backups=enabled; readonly_role=auditor"
+
+test "database metadata evidence excludes row contents":
+    let evidence = collect_database_metadata()
+    assert evidence.contains(substring: "encrypted_backups=enabled") == 1
+    assert evidence.contains(substring: "readonly_role=auditor") == 1
+
+fn publish_evidence_packet(card: String @cardholder_data, diagnosis: String @phi, email: String @pii) -> Int [io]:
+    log_info(message: collect_soc2_cloud_config())
+    log_info(message: collect_database_metadata())
+
+    // These are the defects: the worker is trying to prove controls, but it
+    // exports raw customer data while doing it. Heat makes the failure loud.
+    log_info(message: card)
+    log_info(message: diagnosis)
+    return log_info(message: email)
+
+fn main() -> Int [io]:
+    return publish_evidence_packet(
+        card: "4111111111111111",
+        diagnosis: "HIV positive",
+        email: "patient@example.com",
+    )
