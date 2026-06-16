@@ -1,6 +1,13 @@
 # Heat Releases
 
-Public binary distribution channel and Homebrew tap for Heat and MCP Builder.
+Public binary releases for Heat: a compiler and toolchain for AI-authored code
+that refuses unsafe program shapes at compile time.
+
+Try the demos:
+
+- [Heat compiler refusal demos](https://nchantarotwong.github.io/heat-releases/heat_demos.html)
+- [MCP Builder demo guide](docs/examples/demos/mcp_server_builder/README.md)
+- [Heat thesis / AI risk summary](https://nchantarotwong.github.io/heat-releases/heat_llm_risk.html)
 
 This repository is intentionally not the Heat source repository. It contains
 release metadata, the Homebrew formula, and public GitHub Release assets for
