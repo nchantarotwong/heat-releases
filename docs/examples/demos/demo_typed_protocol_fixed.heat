@@ -1,0 +1,32 @@
+// The repair the diagnostic points at: open() first (Closed -> Opened),
+// then write/close are legal. The handle's state advances with each send,
+// so the compiler proves the whole sequence is in-order.
+actor FileWriter:
+    var n: Int = 0
+    protocol:
+        state Closed:
+            open(path: String) -> Opened
+        state Opened:
+            write(data: String) -> Opened
+            close() -> Closed
+        initial: Closed
+
+    receive open(path: String) -> Int:
+        n = 0
+        return n
+
+    receive write(data: String) -> Int:
+        n = n + 1
+        return n
+
+    receive close() -> Int:
+        n = 0
+        return n
+
+fn main() -> Int [io]:
+    let f = spawn FileWriter()
+    let _a = await f.open(path: "/tmp/out.txt")
+    let _b = await f.write(data: "hello")
+    let _c = await f.close()
+    print(value: 0)
+    return 0

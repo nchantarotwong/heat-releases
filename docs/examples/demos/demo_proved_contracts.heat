@@ -1,0 +1,17 @@
+// The author states the spec with require/ensure, then implements clamp
+// with an off-by-one in the low branch (returns lo - 1). In most languages
+// this type-checks, ships, and fails only on the unlucky input. Heat's SMT
+// prover can't discharge the ensure at COMPILE time and refuses the
+// function — NL-PROVE-1 — before any input is ever tested.
+fn clamp(n: Int, lo: Int, hi: Int) -> Int:
+    require lo <= hi, "lo must not exceed hi"
+    ensure result >= lo, "result is at least lo"
+    ensure result <= hi, "result is at most hi"
+    if n < lo:
+        return lo - 1
+    if n > hi:
+        return hi
+    return n
+
+fn main() -> Int:
+    return 0
