@@ -1,0 +1,18 @@
+// Fed the NL-PROVE-1 counterexample back in, the fix is obvious: the low
+// branch must return lo, not lo - 1. Now every ensure is provable; the
+// contract is erased from the release binary like a discharged test.
+fn clamp(n: Int, lo: Int, hi: Int) -> Int:
+    require lo <= hi, "lo must not exceed hi"
+    ensure result >= lo, "result is at least lo"
+    ensure result <= hi, "result is at most hi"
+    if n < lo:
+        return lo
+    if n > hi:
+        return hi
+    return n
+
+fn main() -> Int [io]:
+    print(value: format("{r}", r: clamp(n: 5, lo: 0, hi: 10)))
+    print(value: format("{r}", r: clamp(n: -3, lo: 0, hi: 10)))
+    print(value: format("{r}", r: clamp(n: 15, lo: 0, hi: 10)))
+    return 0
