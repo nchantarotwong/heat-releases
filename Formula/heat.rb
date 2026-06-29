@@ -1,22 +1,22 @@
 class Heat < Formula
   desc "AI-authored programming language and policy-checked MCP builder"
   homepage "https://github.com/nchantarotwong/heat-releases"
-  version "0.8.2"
+  version "0.8.3"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.2/heat-darwin-arm64.tar.gz"
-      sha256 "8d8bc70a816b2a58817d902e12ce7d252f325e28254f59119901d117202d9aad"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.3/heat-darwin-arm64.tar.gz"
+      sha256 "385341aac3d14712752380ff066bdf3965a190fd606d608044631c6423606203"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.2/heat-linux-arm64.tar.gz"
-      sha256 "88dd6eee3b66ec0915d01e0d52b61b04aa682bf4d8e357fc834363b08d58a573"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.3/heat-linux-arm64.tar.gz"
+      sha256 "4229236bbaec32433ae40dff44a06269183ffb34634b5af6e2bb44b8e010d6f4"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.2/heat-linux-x86_64.tar.gz"
-      sha256 "47374ed36c0f64094a5dc788a5936bec67a347c324909e7e2a92b8640e2ee8e2"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.3/heat-linux-x86_64.tar.gz"
+      sha256 "cb9e9bb743f1dc65a1d67393e11ef83a19d7617dda1abcac375991e11d0cd6cb"
     end
   end
 
@@ -31,6 +31,7 @@ class Heat < Formula
       #!/bin/bash
       HEAT_HOME="#{libexec}"
       HEAT_REAL="$HEAT_HOME/bin/heatc.real"
+      export HEAT_HOME
       USER_CWD="$PWD"
       args=()
 
@@ -123,6 +124,15 @@ class Heat < Formula
     assert_match "heatc", shell_output("#{bin}/heatc version")
     assert_match "heatc mcp", shell_output("#{bin}/heat-mcp help")
     assert_match "heatcheck", shell_output("#{bin}/heatcheck --version")
+    (testpath/"stdlib_import.heat").write <<~EOS
+      import flags
+      fn main() -> Int [io]:
+          let argv = ["prog", "--port=8080"]
+          print(value: format("port {p}", p: parse_int_flag(args: argv, name: "--port", default: 3000)))
+          return 0
+    EOS
+    system "#{bin}/heatc", "build", testpath/"stdlib_import.heat", "-o", testpath/"stdlib_import"
+    assert_equal "port 8080", shell_output("#{testpath}/stdlib_import").strip
     assert_match "MCP Builder install doctor ok", shell_output("PATH=#{bin}:$PATH #{bin}/heat-mcp doctor-install")
   end
 end
