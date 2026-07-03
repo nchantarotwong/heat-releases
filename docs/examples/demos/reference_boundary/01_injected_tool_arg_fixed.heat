@@ -1,0 +1,23 @@
+// The repair the diagnostic points at: launder the injected argument at
+// the boundary before it reaches the tool. escape_sql turns @user_input
+// into @sql_safe. Same agent intent, same tool call — safe binary.
+struct ToolCall:
+    query: String
+
+fn db_tool(sql: String @sql_safe) -> Int [io]:
+    // Only laundered SQL reaches here. Echo and succeed so the safe
+    // gateway actually runs.
+    print(value: format("db_tool: {s}", s: sql))
+    return 0
+
+fn dispatch(tool_json: String) -> Int [io]:
+    match json_extract[ToolCall](text: tool_json):
+        Result.ok(call):
+            let safe = escape_sql(raw: call.query)
+            return db_tool(sql: safe)
+        Result.error(message):
+            print(value: message)
+            return 1
+
+fn main() -> Int [io]:
+    return dispatch(tool_json: "{\"query\": \"'; DROP TABLE users; --\"}")
