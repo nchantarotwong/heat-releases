@@ -1,0 +1,28 @@
+// Heat AI Tool Gateway — refusal class 1: injected tool argument.
+//
+// An LLM agent returns a tool call as JSON. json_extract[T] decodes it
+// into a typed struct and stamps every String field @user_input, because
+// model/tool output is always external, injectable input. The agent then
+// passes that field straight into a database tool whose SQL slot demands
+// @sql_safe. Heat refuses the flow at COMPILE time — the injected argument
+// can never reach the sink, so the binary that would run it is never built.
+struct ToolCall:
+    query: String
+
+// Stand-in for the real db_query builtin; a one-arg @sql_safe sink keeps
+// the gateway tiny. The @sql_safe tag is the boundary.
+fn db_tool(sql: String @sql_safe) -> Int [io]:
+    todo("db_tool")
+
+fn dispatch(tool_json: String) -> Int [io]:
+    match json_extract[ToolCall](text: tool_json):
+        Result.ok(call):
+            // REFUSED: call.query carries @user_input from json_extract;
+            // db_tool needs @sql_safe. Prompt injection stops here.
+            return db_tool(sql: call.query)
+        Result.error(message):
+            print(value: message)
+            return 1
+
+fn main() -> Int [io]:
+    return dispatch(tool_json: "{\"query\": \"'; DROP TABLE users; --\"}")

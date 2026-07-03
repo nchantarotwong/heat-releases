@@ -1,0 +1,15 @@
+// The repair the diagnostic points at: launder the path at the boundary.
+// escape_path turns @user_input into @path_safe, satisfying both the
+// built-in lattice and the project obligation. Same tool, safe binary.
+obligation NoUserInputToFilesystem:
+    "User input must never reach a filesystem tool in this gateway."
+    repair "route through validate_path (returns @path_safe)"
+    forbid @user_input -> @path_safe
+
+fn file_tool(path: String @user_input) -> Result[Int, String] [io]:
+    let safe = escape_path(raw: path)
+    return write_file(path: safe, content: "x")
+
+fn main() -> Int [io]:
+    let _ = file_tool(path: "../../etc/passwd")
+    return 0

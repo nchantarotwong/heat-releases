@@ -1,0 +1,25 @@
+// The repair the diagnostic points at: authorize() first (Ready -> Authorized),
+// then charge() is legal. The handle's state advances with each send, so the
+// compiler proves the whole tool sequence is in-order before it ships.
+actor PaymentTool:
+    var cents: Int = 0
+    protocol:
+        state Ready:
+            authorize(amount: Int) -> Authorized
+        state Authorized:
+            charge() -> Ready
+        initial: Ready
+
+    receive authorize(amount: Int) -> Int:
+        cents = amount
+        return cents
+
+    receive charge() -> Int:
+        return cents
+
+fn main() -> Int [io]:
+    let tool = spawn PaymentTool()
+    let _a = await tool.authorize(amount: 4200)
+    let _b = await tool.charge()
+    print(value: 0)
+    return 0

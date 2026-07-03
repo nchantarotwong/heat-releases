@@ -1,0 +1,18 @@
+// Heat AI Tool Gateway — refusal class 3: project policy obligation.
+//
+// Beyond the built-in lattice, a team states its OWN egress policy as one
+// declaration. Here: user-controlled input must never reach a filesystem
+// tool in this service. The agent's file-write tool passes @user_input
+// straight to write_file. Heat refuses it against the project obligation
+// and prints the team's own message and repair — NL-OBL-001.
+obligation NoUserInputToFilesystem:
+    "User input must never reach a filesystem tool in this gateway."
+    repair "route through validate_path (returns @path_safe)"
+    forbid @user_input -> @path_safe
+
+fn file_tool(path: String @user_input) -> Result[Int, String] [io]:
+    return write_file(path: path, content: "x")
+
+fn main() -> Int [io]:
+    let _ = file_tool(path: "../../etc/passwd")
+    return 0

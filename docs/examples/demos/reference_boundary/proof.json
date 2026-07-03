@@ -1,0 +1,28 @@
+{
+  "generated_by": "heatc via capture.sh",
+  "flows": [
+    {
+      "id": "injected_arg",
+      "label": "Injected tool argument",
+      "bad_verdict": "REFUSED",
+      "diagnostic": "error[NL-0500] 01_injected_tool_arg.heat:22:20: 'db_tool' arg 0 expects provenance '@sql_safe', got '@user_input' \u2014 hint: pipe through escape_sql(input: <expr>) to launder",
+      "fixed_verdict": "BUILT"
+    }
+    ,
+    {
+      "id": "call_order",
+      "label": "Out-of-order tool call",
+      "bad_verdict": "REFUSED",
+      "diagnostic": "error[NL-PROTO-1] 02_tool_call_order.heat:27:5: 'charge' not legal in protocol state 'Ready' for PaymentTool. Legal in 'Ready': authorize()",
+      "fixed_verdict": "BUILT"
+    }
+    ,
+    {
+      "id": "policy",
+      "label": "Project egress policy",
+      "bad_verdict": "REFUSED",
+      "diagnostic": "error[NL-OBL-001] 03_policy_obligation.heat:14:12: project obligation 'NoUserInputToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at 03_policy_obligation.heat:8): User input must never reach a filesystem tool in this gateway. \u2014 repair: route through validate_path (returns @path_safe)",
+      "fixed_verdict": "BUILT"
+    }
+  ]
+}

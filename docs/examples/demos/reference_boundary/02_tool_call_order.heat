@@ -1,0 +1,27 @@
+// Heat AI Tool Gateway — refusal class 2: out-of-order tool call.
+//
+// A payment tool declares a protocol: you must authorize() before you can
+// charge(). Given a task, the agent emits charge() first. This is not a
+// data race, so no other language's type system catches it — it fails at
+// runtime as a dropped message or a wrong-state reply, in production, on a
+// real card. Heat tracks the handle's protocol state and refuses the
+// out-of-order send at compile time — NL-PROTO-1.
+actor PaymentTool:
+    var cents: Int = 0
+    protocol:
+        state Ready:
+            authorize(amount: Int) -> Authorized
+        state Authorized:
+            charge() -> Ready
+        initial: Ready
+
+    receive authorize(amount: Int) -> Int:
+        cents = amount
+        return cents
+
+    receive charge() -> Int:
+        return cents
+
+fn main() -> Int [io]:
+    let tool = spawn PaymentTool()
+    return await tool.charge()
