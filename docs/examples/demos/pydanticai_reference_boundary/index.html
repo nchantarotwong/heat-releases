@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Heat + PydanticAI Reference Boundary</title>
+  <style>
+    :root {
+      --bg: #081018;
+      --panel: #101923;
+      --panel2: #0c141d;
+      --text: #eef6ff;
+      --muted: #9cafc4;
+      --dim: #6f8094;
+      --line: rgba(155, 177, 202, .18);
+      --heat: #ff8a3d;
+      --cyan: #5eead4;
+      --bad: #fb7185;
+      --good: #86efac;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(180deg, #0b1620, var(--bg));
+      background-size: 42px 42px, 42px 42px, auto;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      padding: 36px;
+    }
+    main { max-width: 1160px; margin: 0 auto; }
+    a { color: var(--cyan); text-decoration: none; }
+    .back { color: var(--muted); font-size: 14px; }
+    .eyebrow {
+      display: inline-flex;
+      margin-top: 34px;
+      color: var(--cyan);
+      border: 1px solid rgba(94,234,212,.32);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      background: rgba(94,234,212,.06);
+    }
+    h1 {
+      margin: 18px 0 10px;
+      max-width: 860px;
+      font-size: clamp(32px, 4.3vw, 54px);
+      line-height: 1.06;
+      letter-spacing: -.02em;
+    }
+    .lede {
+      max-width: 880px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.55;
+      margin: 0 0 28px;
+    }
+    .lede b { color: var(--text); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(16,25,35,.84);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.28);
+    }
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .big {
+      font-size: 22px;
+      line-height: 1.25;
+      margin: 0 0 12px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    .copy { color: var(--muted); line-height: 1.55; margin: 0; }
+    .stage {
+      position: relative;
+      margin: 0 0 18px;
+      border: 1px solid var(--line);
+      background: rgba(16,25,35,.82);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+    .stage:before {
+      content: "";
+      position: absolute;
+      inset: 58px 20px auto;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(94,234,212,.38), rgba(255,138,61,.42), transparent);
+    }
+    .stage-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .stage-head h2 {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .stage-head span { color: var(--dim); font-size: 13px; }
+    .stage-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr 1fr;
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .stage-card {
+      min-height: 180px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel2);
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stage-card h3 {
+      margin: 0 0 7px;
+      color: var(--text);
+      font-size: 16px;
+    }
+    .stage-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .stage-card.heat {
+      background:
+        linear-gradient(180deg, rgba(255,138,61,.12), rgba(255,138,61,.03)),
+        var(--panel2);
+      box-shadow: inset 0 0 0 1px rgba(255,138,61,.12);
+    }
+    .stage-card.heat:before {
+      content: "compile-time boundary";
+      display: inline-flex;
+      color: #1c0e04;
+      background: var(--heat);
+      border-radius: 999px;
+      padding: 4px 9px;
+      margin-bottom: 12px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .tool-call, .verdict {
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 11px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      background: rgba(255,255,255,.025);
+    }
+    .tool-call b, .verdict b { display: block; color: var(--text); margin-bottom: 3px; }
+    .verdict.refused { border-color: rgba(251,113,133,.48); color: #fecdd3; }
+    .verdict.allowed { border-color: rgba(134,239,172,.48); color: #bbf7d0; }
+    .rail {
+      position: relative;
+      width: 100%;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(155,177,202,.16);
+      overflow: hidden;
+      z-index: 1;
+    }
+    .rail.bad-rail { margin-bottom: 9px; }
+    .rail.good-rail { margin-bottom: 16px; }
+    .packet {
+      position: absolute;
+      top: -4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      transform: translateX(-12px);
+      animation: travel 4.8s ease-in-out infinite;
+    }
+    .packet.bad { background: var(--bad); box-shadow: 0 0 18px rgba(251,113,133,.8); }
+    .packet.good { background: var(--good); box-shadow: 0 0 18px rgba(134,239,172,.75); animation-delay: 2.4s; }
+    .pulse-verdict { animation: verdictPulse 4.8s ease-in-out infinite; }
+    .pulse-verdict.allowed { animation-delay: 2.4s; }
+    @keyframes travel {
+      0% { left: 0; opacity: 0; }
+      12% { opacity: 1; }
+      45% { left: 50%; opacity: 1; }
+      58% { left: 50%; opacity: 1; }
+      76% { left: 100%; opacity: 1; }
+      100% { left: 100%; opacity: 0; }
+    }
+    @keyframes verdictPulse {
+      0%, 36%, 100% { box-shadow: none; }
+      45%, 62% { box-shadow: 0 0 0 1px currentColor, 0 0 22px rgba(255,255,255,.18); }
+    }
+    .flow { display: grid; grid-template-columns: 1fr 56px 1fr; gap: 12px; align-items: stretch; margin-top: 18px; }
+    .box {
+      min-height: 126px;
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .box b { display: block; margin-bottom: 7px; }
+    .box span { color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--heat);
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .bad { border-color: rgba(251,113,133,.5); }
+    .good { border-color: rgba(134,239,172,.5); }
+    .heat { border-color: rgba(255,138,61,.56); }
+    .proof { grid-column: 1 / -1; margin-top: 18px; }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #05090e;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      color: #d7e2f0;
+      padding: 15px;
+      font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .cmd { color: var(--dim); }
+    .refuse { color: var(--bad); }
+    .ok { color: var(--good); }
+    .cost {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: rgba(255,255,255,.025);
+    }
+    .metric b { display: block; color: var(--text); margin-bottom: 5px; }
+    .metric span { color: var(--muted); font-size: 13px; line-height: 1.4; }
+    code {
+      color: #fed7aa;
+      background: rgba(255,138,61,.12);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .92em;
+    }
+    .foot { color: var(--dim); margin-top: 20px; font-size: 14px; line-height: 1.5; }
+    .foot a {
+      color: #fed7aa;
+      background: rgba(255,138,61,.12);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .92em;
+    }
+    .foot a:hover {
+      color: var(--text);
+      background: rgba(94,234,212,.12);
+    }
+    .why { margin-top: 18px; }
+    .diff { margin-top: 18px; }
+    .plus { color: var(--good); }
+    .tilde { color: var(--heat); }
+    @media (max-width: 850px) {
+      body { padding: 22px; }
+      .grid, .flow, .cost, .stage-grid { grid-template-columns: 1fr; }
+      .arrow { min-height: 24px; transform: rotate(90deg); }
+      .stage:before, .rail { display: none; }
+      .stage-head { display: block; }
+      .stage-head span { display: block; margin-top: 7px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .packet, .pulse-verdict { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="../../../heat_demos.html">&larr; All Heat demos</a>
+    <div class="eyebrow">Optional adopter example · PydanticAI-shaped tool boundary</div>
+    <h1>Stop unsafe PydanticAI tool egress before it ships. Fast to try, easy to adopt.</h1>
+    <p class="lede">
+      Add one narrow boundary where model-selected tool calls become filesystem or webhook
+      effects. PydanticAI keeps its agent, tools, and orchestration; Heat proves the risky
+      egress cannot build until values are laundered. The ask is small:
+      <b>one optional example, zero framework rewrite.</b>
+    </p>
+
+    <section class="stage" aria-label="Animated PydanticAI boundary flow">
+      <div class="stage-head">
+        <h2>Boundary Flow</h2>
+        <span>Same tool call, one boundary check, compile-time refusal when it matters.</span>
+      </div>
+      <div class="rail bad-rail"><span class="packet bad"></span></div>
+      <div class="rail good-rail"><span class="packet good"></span></div>
+      <div class="stage-grid">
+        <div class="stage-card">
+          <h3>PydanticAI agent</h3>
+          <p>No framework rewrite: prompts, tools, context, and orchestration stay in Python.</p>
+          <span class="tool-call"><b>export_case_file(path, content)</b>Model-controlled path and content.</span>
+          <span class="tool-call"><b>notify_webhook(url, body)</b>Same reusable boundary shape for network egress.</span>
+        </div>
+        <div class="stage-card heat">
+          <h3>Heat boundary adapter</h3>
+          <p>One adapter call checks the sink contract before unsafe code can be emitted.</p>
+          <span class="verdict refused pulse-verdict"><b>REFUSED</b><code>@user_input</code> cannot reach <code>@path_safe</code>.</span>
+          <span class="verdict allowed pulse-verdict"><b>BUILT</b>Laundered values are allowed through the repaired boundary.</span>
+        </div>
+        <div class="stage-card">
+          <h3>External action</h3>
+          <p>Only calls that satisfy the proof reach filesystems, webhooks, or partner APIs.</p>
+          <span class="tool-call"><b>blocked</b>No unsafe binary is emitted for the bad flow.</span>
+          <span class="tool-call"><b>written / posted</b>Repaired filesystem and webhook boundaries still build.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Before</h2>
+        <p class="big">Today, a model-shaped path can reach a real write.</p>
+        <p class="copy">
+          A ticket contains attacker-controlled text. The agent selects
+          <code>export_case_file</code>. Python can validate ordinary shapes, but the
+          path/content still reach the side-effecting tool unless every code path remembered
+          the same policy check.
+        </p>
+        <div class="flow">
+          <div class="box bad"><b>Ticket / retrieved text</b><span>Untrusted text influences the tool call.</span></div>
+          <div class="arrow">-></div>
+          <div class="box bad"><b>export_case_file</b><span>Writes <code>/tmp/heat_pydanticai_public_case.txt</code>.</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>After</h2>
+        <p class="big">With Heat, the unsafe path fails before release.</p>
+        <p class="copy">
+          The app adds one boundary adapter. Heat refuses model-controlled paths at compile
+          time unless the value is laundered into <code>@path_safe</code>; repaired flows
+          still build.
+        </p>
+        <div class="flow">
+          <div class="box"><b>Same Python agent</b><span>Same tool-call intent and app-level code path.</span></div>
+          <div class="arrow">-></div>
+          <div class="box heat"><b>Heat boundary</b><span>Project policy becomes a compiler diagnostic.</span></div>
+        </div>
+      </div>
+
+      <div class="panel proof">
+        <h2>Real Proof</h2>
+        <pre><span class="cmd">$ bash examples/demos/pydanticai_reference_boundary/run_demo.sh</span>
+
+== capture Heat proof ==
+wrote examples/demos/pydanticai_reference_boundary/heat_boundary/proof.json
+proof and boundary contract are valid
+
+== before: Python tool egress runs ==
+before: wrote /tmp/heat_pydanticai_public_case.txt
+before helper bypass: helper wrote /tmp/heat_pydanticai_public_case.txt
+
+== after: same egress class is stopped at the boundary ==
+after: blocked by Heat boundary:
+<span class="refuse">error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0</span>
+
+== pydanticai-shaped slice: same guarded tool adapter ==
+pydanticai slice: blocked by Heat boundary:
+<span class="refuse">error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0</span>
+
+== repaired slice: laundered path is allowed ==
+pydanticai repaired: <span class="ok">allowed by Heat boundary (BUILT)</span>: wrote /tmp/heat_pydanticai_safe_exports/case_4142.txt
+
+<span class="ok">fixed_verdict: BUILT</span></pre>
+      </div>
+    </section>
+
+    <section class="cost">
+      <div class="metric"><b>No framework rewrite</b><span>Ship as an optional example or cookbook entry.</span></div>
+      <div class="metric"><b>Lightweight layer</b><span>One adapter call at the egress edge; no proxy runtime.</span></div>
+      <div class="metric"><b>Missed helpers still fail</b><span>A direct helper write is refused at the Heat sink.</span></div>
+      <div class="metric"><b>Filesystem + webhook proof</b><span>The same boundary shape covers two real sink classes.</span></div>
+    </section>
+
+    <section class="panel why">
+      <h2>Why Not Just Python?</h2>
+      <p class="big">Python guards help when they are called. Heat catches the path that forgot.</p>
+      <p class="copy">
+        Decorators and callbacks are useful, but they are conventions. If a future helper
+        writes a file directly, the policy is bypassed unless a test or reviewer catches it.
+        In this boundary, filesystem egress requires <code>@path_safe</code>. Any path still
+        carrying <code>@user_input</code> fails the build at the sink.
+      </p>
+    </section>
+
+    <section class="panel diff">
+      <h2>Proof Coverage</h2>
+      <pre><span class="refuse">REFUSED</span> model-controlled file path -> write_file(path: @path_safe)
+<span class="refuse">REFUSED</span> missed helper -> write_file(path: @path_safe)
+<span class="refuse">REFUSED</span> model-controlled webhook URL/body -> http_post(@audit_safe)
+<span class="ok">BUILT</span> repaired file boundary
+<span class="ok">BUILT</span> repaired webhook boundary</pre>
+    </section>
+
+    <section class="panel diff">
+      <h2>What Changes</h2>
+      <p class="big">One tool implementation gets one boundary call.</p>
+      <pre><span class="tilde">~ @support_agent.tool</span>
+async def export_case_file(ctx, path: str, content: str) -> str:
+<span class="plus">+    allowed, reason = heat_boundary.check_export_case_file(path=path, content=content)</span>
+<span class="plus">+    if not allowed:</span>
+<span class="plus">+        return "blocked by Heat boundary: " + reason</span>
+     Path(path).write_text(content)
+     return "wrote file"</pre>
+    </section>
+
+    <p class="foot">
+      Files: <a href="./before_bank_support.py">before_bank_support.py</a>,
+      <a href="./after_bank_support.py">after_bank_support.py</a>,
+      <a href="./pydanticai_bank_support.py">pydanticai_bank_support.py</a>,
+      <a href="./heat_boundary/bank_support_boundary.heat">heat_boundary/bank_support_boundary.heat</a>,
+      and <a href="./heat_boundary/proof.json">heat_boundary/proof.json</a>.
+    </p>
+  </main>
+</body>
+</html>

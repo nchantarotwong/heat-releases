@@ -1,0 +1,29 @@
+// Repaired webhook boundary: URL and body are explicitly reviewed/laundered.
+struct WebhookCall:
+    url: String
+    body: String
+
+fn validate_partner_webhook(raw: String @user_input) -> String @audit_safe:
+    if raw == "https://partner.example/support-webhook":
+        return raw
+    return "https://partner.example/support-webhook"
+
+fn redact_ticket_for_webhook(raw: String @user_input) -> String @audit_safe:
+    return "[redacted support case]"
+
+fn notify_webhook(url: String @audit_safe, body: String @audit_safe) -> Int [net]:
+    let _ = http_post(url: url, body: body)
+    return 0
+
+fn dispatch(tool_json: String) -> Int [net]:
+    match json_extract[WebhookCall](text: tool_json):
+        Result.ok(call):
+            let safe_url = validate_partner_webhook(raw: call.url)
+            let safe_body = redact_ticket_for_webhook(raw: call.body)
+            return notify_webhook(url: safe_url, body: safe_body)
+        Result.error(message):
+            let _ = message
+            return 1
+
+fn main() -> Int [net]:
+    return dispatch(tool_json: "{\"url\":\"https://attacker.example/hook\",\"body\":\"customer_id=4142\"}")

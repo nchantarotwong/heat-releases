@@ -1,0 +1,30 @@
+{
+  "generated_by": "heatc via capture.sh",
+  "target": "pydantic/pydantic-ai",
+  "expected_diagnostic": "NL-OBL-001",
+  "bad_verdict": "REFUSED",
+  "diagnostic": "error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_boundary.heat:6): Ticket/model-controlled data must not choose filesystem export paths. \u2014 repair: route through escape_path (returns @path_safe)",
+  "fixed_verdict": "BUILT",
+  "flows": [
+    {
+      "id": "filesystem_boundary",
+      "label": "Model-controlled file export",
+      "bad_verdict": "REFUSED",
+      "diagnostic": "error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_boundary.heat:6): Ticket/model-controlled data must not choose filesystem export paths. \u2014 repair: route through escape_path (returns @path_safe)",
+      "fixed_verdict": "BUILT"
+    },
+    {
+      "id": "missed_helper",
+      "label": "Helper bypasses Python guard convention",
+      "bad_verdict": "REFUSED",
+      "diagnostic": "error[NL-OBL-001] bank_support_helper_bypass.heat:17:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_helper_bypass.heat:6): Ticket/model-controlled data must not choose filesystem export paths. \u2014 repair: route through escape_path (returns @path_safe)"
+    },
+    {
+      "id": "webhook_egress",
+      "label": "Model-controlled webhook URL/body",
+      "bad_verdict": "REFUSED",
+      "diagnostic": "error[NL-0500] bank_support_webhook.heat:12:13: 'http_post' arg 0 expects provenance '@audit_safe', got '@user_input'",
+      "fixed_verdict": "BUILT"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "target": "pydantic/pydantic-ai",
+  "boundary": "heat_boundary",
+  "proof_path": "heat_boundary/proof.json",
+  "tools": [
+    {
+      "name": "export_case_file",
+      "args": [
+        {"name": "path", "type": "str", "source_tag": "@user_input"},
+        {"name": "content", "type": "str", "source_tag": "@user_input"}
+      ],
+      "sink": {"class": "filesystem", "function": "write_file", "required_tag": "@path_safe"},
+      "expected_refusal": {
+        "flow_id": "filesystem_boundary",
+        "diagnostic": "NL-OBL-001"
+      },
+      "generated_adapter": {
+        "method": "check_export_case_file",
+        "allow_when": "path has been laundered to @path_safe",
+        "fail_closed": true
+      }
+    },
+    {
+      "name": "notify_webhook",
+      "args": [
+        {"name": "url", "type": "str", "source_tag": "@user_input"},
+        {"name": "body", "type": "str", "source_tag": "@user_input"}
+      ],
+      "sink": {"class": "network", "function": "http_post", "required_tag": "@audit_safe"},
+      "expected_refusal": {
+        "flow_id": "webhook_egress",
+        "diagnostic": "NL-0500"
+      },
+      "generated_adapter": {
+        "method": "check_notify_webhook",
+        "allow_when": "url and body have been laundered to @audit_safe",
+        "fail_closed": true
+      }
+    }
+  ]
+}
