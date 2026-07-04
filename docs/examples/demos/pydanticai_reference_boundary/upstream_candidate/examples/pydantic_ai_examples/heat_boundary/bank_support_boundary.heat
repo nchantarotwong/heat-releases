@@ -1,0 +1,30 @@
+// PydanticAI adopter-shaped boundary demo.
+//
+// A Python agent framework can validate tool argument shape, but the egress
+// decision is still app code. Heat owns the boundary where model-shaped,
+// user-influenced tool arguments become filesystem effects.
+obligation NoTicketTextToFilesystem:
+    "Ticket/model-controlled data must not choose filesystem export paths."
+    repair "route through escape_path (returns @path_safe)"
+    forbid @user_input -> @path_safe
+
+struct ToolCall:
+    path: String
+    content: String
+
+fn export_case_file(path: String @user_input, content: String @user_input) -> Result[Int, String] [io]:
+    // REFUSED: path came from model/tool output, which json_extract stamps
+    // @user_input. write_file requires a @path_safe path.
+    return write_file(path: path, content: content)
+
+fn dispatch(tool_json: String) -> Int [io]:
+    match json_extract[ToolCall](text: tool_json):
+        Result.ok(call):
+            let _ = export_case_file(path: call.path, content: call.content)
+            return 0
+        Result.error(message):
+            print(value: message)
+            return 1
+
+fn main() -> Int [io]:
+    return dispatch(tool_json: "{\"path\":\"/tmp/heat_pydanticai_public_case.txt\",\"content\":\"customer_id=4142\"}")

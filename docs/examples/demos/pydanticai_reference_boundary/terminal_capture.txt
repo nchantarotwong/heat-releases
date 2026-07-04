@@ -1,0 +1,32 @@
+== capture Heat proof ==
+wrote examples/demos/pydanticai_reference_boundary/heat_boundary/proof.json
+proof and boundary contract are valid
+
+== before: Python tool egress runs ==
+before: wrote /tmp/heat_pydanticai_public_case.txt
+before helper bypass: helper wrote /tmp/heat_pydanticai_public_case.txt
+
+== after: same egress class is stopped at the boundary ==
+after: blocked by Heat boundary: error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_boundary.heat:6): Ticket/model-controlled data must not choose filesystem export paths. — repair: route through escape_path (returns @path_safe)
+
+== pydanticai-shaped slice: same guarded tool adapter ==
+pydanticai slice: blocked by Heat boundary: error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_boundary.heat:6): Ticket/model-controlled data must not choose filesystem export paths. — repair: route through escape_path (returns @path_safe)
+
+== repaired slice: laundered path is allowed ==
+pydanticai repaired: allowed by Heat boundary (BUILT): wrote /tmp/heat_pydanticai_safe_exports/case_4142.txt
+
+== proof summary ==
+Heat + PydanticAI boundary proof
+--------------------------------
+target: pydantic/pydantic-ai
+unsafe boundary: REFUSED
+repaired boundary: BUILT
+diagnostic: error[NL-OBL-001] bank_support_boundary.heat:18:12: project obligation 'NoTicketTextToFilesystem' refuses '@user_input' reaching '@path_safe' at 'write_file' arg 0 (declared at bank_support_boundary.heat:6): Ticket/model-controlled data must not choose filesystem export paths. — repair: route through escape_path (returns @path_safe)
+
+flows:
+- Model-controlled file export: REFUSED, fixed=BUILT
+- Helper bypasses Python guard convention: REFUSED
+- Model-controlled webhook URL/body: REFUSED, fixed=BUILT
+
+claim: one PydanticAI tool boundary can reject unsafe egress before
+the unsafe binary is emitted, while the repaired flow still builds.

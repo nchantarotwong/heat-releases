@@ -1,0 +1,32 @@
+// Missed-helper proof: a future helper forgets the adapter convention.
+//
+// In Python, a helper can write the file directly if the author forgets the
+// runtime guard. In Heat, the sink still requires @path_safe, so the unsafe
+// flow is refused at write_file even though it travels through another helper.
+obligation NoTicketTextToFilesystem:
+    "Ticket/model-controlled data must not choose filesystem export paths."
+    repair "route through escape_path (returns @path_safe)"
+    forbid @user_input -> @path_safe
+
+struct ToolCall:
+    path: String
+    content: String
+
+fn write_export_file(path: String @user_input, content: String @user_input) -> Result[Int, String] [io]:
+    // REFUSED: the helper forgot the boundary, but the sink did not.
+    return write_file(path: path, content: content)
+
+fn export_case_file_via_helper(path: String @user_input, content: String @user_input) -> Result[Int, String] [io]:
+    return write_export_file(path: path, content: content)
+
+fn dispatch(tool_json: String) -> Int [io]:
+    match json_extract[ToolCall](text: tool_json):
+        Result.ok(call):
+            let _ = export_case_file_via_helper(path: call.path, content: call.content)
+            return 0
+        Result.error(message):
+            print(value: message)
+            return 1
+
+fn main() -> Int [io]:
+    return dispatch(tool_json: "{\"path\":\"/tmp/heat_pydanticai_public_case.txt\",\"content\":\"customer_id=4142\"}")
