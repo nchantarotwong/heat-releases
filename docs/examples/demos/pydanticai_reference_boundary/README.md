@@ -42,6 +42,8 @@ boundary.
 
 We changed the egress edge, not the agent.
 
+Related demo: [`AI authorship round trip timing`](../llm_roundtrip_timing/README.md).
+
 ## Reproduce
 
 From the repo root:

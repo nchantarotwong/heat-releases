@@ -1,0 +1,14 @@
+Write a small Heat program that demonstrates why all arguments are named.
+
+The program should define a function that formats a customer support ticket
+summary from:
+- customer_id: String
+- severity: String
+- message: String
+
+Then call it from main and print the result.
+
+Requirements:
+- Output only Heat code.
+- Do not use Markdown fences.
+- The code should compile as written.
