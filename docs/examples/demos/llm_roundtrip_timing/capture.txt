@@ -1,0 +1,33 @@
+LLM authoring capture
+=====================
+
+Prompt:
+  examples/demos/llm_roundtrip_timing/prompt.txt
+
+Model/client:
+  Claude Opus 4.8 via Claude Code CLI
+
+Observed round trip:
+  76.94s
+
+Generated Heat program:
+  examples/demos/llm_roundtrip_timing/claude_response.heat
+
+Compile:
+  /usr/bin/time -p timeout 10s /tmp/heatc examples/demos/llm_roundtrip_timing/claude_response.heat -o /tmp/heat_llm_roundtrip_demo
+
+Observed compile time:
+  real 0.05
+
+Run:
+  /usr/bin/time -p timeout 10s /tmp/heat_llm_roundtrip_demo
+
+Observed run time:
+  real <0.01
+
+Manual edits to generated Heat program:
+  0
+
+Caveat:
+  LLM timing includes Claude Code CLI, client, network, provider, and model
+  latency. It is a live observation, not a guaranteed SLA.

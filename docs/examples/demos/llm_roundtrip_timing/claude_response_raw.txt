@@ -1,0 +1,25 @@
+I'll avoid the unverifiable trailing-comma question by mirroring the exact call shape the spec proves compiles (`greet`/`main`): no trailing commas, closing paren after the last argument. Here's the program.
+
+fn format_ticket(customer_id: String, severity: String, message: String) -> String:
+    return format("[{severity}] ticket for {customer_id}: {message}",
+                  severity: severity, customer_id: customer_id, message: message)
+
+test "format_ticket labels each field":
+    assert format_ticket(customer_id: "CUST-4821", severity: "high",
+                         message: "cannot log in")
+        == "[high] ticket for CUST-4821: cannot log in"
+
+test "argument order at the call site does not matter":
+    // Same values, listed in a different order -- the labels bind them,
+    // so the result is identical. There is no positional slot to get wrong.
+    assert format_ticket(message: "cannot log in", customer_id: "CUST-4821",
+                         severity: "high")
+        == "[high] ticket for CUST-4821: cannot log in"
+
+fn main() -> Int [io]:
+    // Every argument is named, so this call reads as its own documentation
+    // and a swap like severity/customer_id is impossible to express.
+    let summary = format_ticket(customer_id: "CUST-4821", severity: "high",
+                                message: "cannot log in")
+    print(value: summary)
+    return 0

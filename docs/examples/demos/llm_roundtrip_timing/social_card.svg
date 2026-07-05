@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Heat LLM roundtrip timing comparison</title>
+  <desc id="desc">Claude Opus 4.8 via Claude Code CLI took 76.94 seconds. Heat compiled in 0.05 seconds and ran in less than 0.01 seconds.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1117"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g opacity="0.18" stroke="#e5eef8" stroke-width="1">
+    <path d="M0 96h1200M0 192h1200M0 288h1200M0 384h1200M0 480h1200M0 576h1200"/>
+    <path d="M120 0v675M240 0v675M360 0v675M480 0v675M600 0v675M720 0v675M840 0v675M960 0v675M1080 0v675"/>
+  </g>
+  <text x="72" y="88" fill="#f8fafc" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="40" font-weight="800">Measured a real AI-authored Heat loop</text>
+  <text x="72" y="128" fill="#a9b8ca" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="21">The goal is not to make the model faster. It is to need fewer model round trips.</text>
+  <g transform="translate(72 178)">
+    <rect x="0" y="0" width="500" height="340" rx="8" fill="#2a1116" stroke="#fb7185" stroke-width="3"/>
+    <text x="34" y="56" fill="#fecdd3" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="22" font-weight="800" letter-spacing="2">LIVE LLM AUTHORING</text>
+    <text x="34" y="122" fill="#ffffff" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="38" font-weight="800">Claude Opus 4.8</text>
+    <text x="34" y="166" fill="#fda4af" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24">via Claude Code CLI</text>
+    <text x="34" y="262" fill="#ffffff" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="92" font-weight="900">76.94s</text>
+    <text x="34" y="304" fill="#fecdd3" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24">round trip, variable, not an SLA</text>
+  </g>
+  <g transform="translate(628 178)">
+    <rect x="0" y="0" width="500" height="340" rx="8" fill="#0d2416" stroke="#86efac" stroke-width="3"/>
+    <text x="34" y="56" fill="#bbf7d0" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="22" font-weight="800" letter-spacing="2">LOCAL HEAT PATH</text>
+    <text x="34" y="122" fill="#ffffff" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="38" font-weight="800">Generated Heat</text>
+    <text x="34" y="166" fill="#86efac" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24">compiled locally</text>
+    <text x="34" y="246" fill="#ffffff" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="72" font-weight="900">0.05s</text>
+    <text x="274" y="246" fill="#d1fae5" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="34" font-weight="800">compile</text>
+    <text x="34" y="306" fill="#ffffff" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="44" font-weight="900">&lt;0.01s run</text>
+  </g>
+  <text x="72" y="588" fill="#cbd5e1" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24" font-weight="700">Manual edits: 0</text>
+  <text x="72" y="626" fill="#7f8da0" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="17">Measured locally via Claude Code CLI + /usr/bin/time -p. LLM timing includes client/network/provider/model latency and is not a guaranteed SLA.</text>
+</svg>

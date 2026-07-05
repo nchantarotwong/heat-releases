@@ -1,0 +1,11 @@
+{
+  "model": "Claude Opus 4.8",
+  "client": "Claude Code CLI",
+  "llm_roundtrip_seconds": 76.94,
+  "heat_compile_seconds": 0.05,
+  "heat_run_seconds": 0.01,
+  "heat_run_label": "<0.01s",
+  "manual_edits": 0,
+  "token_cost_note_included": false,
+  "caveat": "LLM timing includes Claude Code CLI, client, network, provider, and model latency. It is a live observation, not a guaranteed SLA."
+}
