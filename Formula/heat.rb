@@ -1,22 +1,24 @@
 class Heat < Formula
   desc "AI-authored programming language and policy-checked MCP builder"
   homepage "https://github.com/nchantarotwong/heat-releases"
-  version "0.8.9"
+  version "0.9.0"
+
+  depends_on "node"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.9/heat-darwin-arm64.tar.gz"
-      sha256 "32dacc7ae95e925f9438dd944601d8661651c78e01979b1401b117221b5e1340"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.0/heat-darwin-arm64.tar.gz"
+      sha256 "2a558be5b44c147e7f84985547c0b8cc8f7f5c7340b08a3eee3a139d52fce194"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.9/heat-linux-arm64.tar.gz"
-      sha256 "12dc8175b3474002972d42a0752ff58e64b5b9536523ee64a5852eabfcbb9088"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.0/heat-linux-arm64.tar.gz"
+      sha256 "dde66095885a5918863a85b755d0f151ffd6b26af155cd4fea79ef21f02a5980"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.9/heat-linux-x86_64.tar.gz"
-      sha256 "47c2f83adef736cbee77a9f514039034f954be6b9acf0bd7de0c16b7ebecddf4"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.0/heat-linux-x86_64.tar.gz"
+      sha256 "7ae7ea5b859d7817df1df0dce7e2953c3d82bb5fc4bfdf54f3e674e39d63033f"
     end
   end
 
@@ -24,8 +26,16 @@ class Heat < Formula
     libexec.install Dir["*"]
     stdlib = libexec/"bootstrap/stdlib"
     bridge = libexec/"bootstrap/runtime/playwright_bridge.js"
+    runtime_pkg = libexec/"bootstrap/runtime/package.json"
+    runtime_lock = libexec/"bootstrap/runtime/package-lock.json"
+    runtime_node_modules = libexec/"bootstrap/runtime/node_modules"
     (libexec/"stdlib").install Dir["#{stdlib}/*.heat"] if stdlib.exist?
-    (libexec/"runtime").install bridge if bridge.exist?
+    if bridge.exist?
+      (libexec/"runtime").install bridge
+      (libexec/"runtime").install runtime_pkg if runtime_pkg.exist?
+      (libexec/"runtime").install runtime_lock if runtime_lock.exist?
+      (libexec/"runtime").install runtime_node_modules if runtime_node_modules.exist?
+    end
 
     (bin/"heatc").write <<~SH
       #!/bin/bash
@@ -145,6 +155,9 @@ class Heat < Formula
                   return 0
               Result.error(message):
                   if message.contains(substring: "bridge_not_found:") == 1:
+                      print(value: message)
+                      return 1
+                  if message.contains(substring: "playwright_not_installed:") == 1:
                       print(value: message)
                       return 1
                   print(value: "browser bridge resolved")
