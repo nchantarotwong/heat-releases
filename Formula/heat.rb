@@ -1,22 +1,22 @@
 class Heat < Formula
   desc "AI-authored programming language and policy-checked MCP builder"
   homepage "https://github.com/nchantarotwong/heat-releases"
-  version "0.8.8"
+  version "0.8.9"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.8/heat-darwin-arm64.tar.gz"
-      sha256 "46b3777c6ef6d4ede4b270ec5090b0e6ab5725711c7fbdcc922574b8458cffd3"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.9/heat-darwin-arm64.tar.gz"
+      sha256 "32dacc7ae95e925f9438dd944601d8661651c78e01979b1401b117221b5e1340"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.8/heat-linux-arm64.tar.gz"
-      sha256 "c42c53ff4b4930a38dac1765036bcaa12236c596b63edaae8054880df4dbdc14"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.9/heat-linux-arm64.tar.gz"
+      sha256 "12dc8175b3474002972d42a0752ff58e64b5b9536523ee64a5852eabfcbb9088"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.8/heat-linux-x86_64.tar.gz"
-      sha256 "8795ba6091e1fe12c14d092c7960412f38da6f548cd5382fc49ff1a1ec5a06f7"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.8.9/heat-linux-x86_64.tar.gz"
+      sha256 "47c2f83adef736cbee77a9f514039034f954be6b9acf0bd7de0c16b7ebecddf4"
     end
   end
 
@@ -133,6 +133,31 @@ class Heat < Formula
     EOS
     system "#{bin}/heatc", "build", testpath/"stdlib_import.heat", "-o", testpath/"stdlib_import"
     assert_equal "port 8080", shell_output("#{testpath}/stdlib_import").strip
+
+    (testpath/"browser_bridge_resolution.heat").write <<~EOS
+      import browser
+
+      fn main() -> Int [io]:
+          match browser_launch(browser_kind: "chromium", headless: 1):
+              Result.ok(_):
+                  browser_close()
+                  print(value: "browser bridge resolved")
+                  return 0
+              Result.error(message):
+                  if message.contains(substring: "bridge_not_found:") == 1:
+                      print(value: message)
+                      return 1
+                  print(value: "browser bridge resolved")
+                  return 0
+    EOS
+    system "#{bin}/heatc", "build", testpath/"browser_bridge_resolution.heat",
+           "-o", testpath/"browser_bridge_resolution"
+    mkdir testpath/"no-home"
+    out = shell_output(
+      "HEAT_HOME= HOME=#{testpath}/no-home #{testpath}/browser_bridge_resolution",
+    )
+    assert_equal "browser bridge resolved", out.strip
+
     assert_match "MCP Builder install doctor ok", shell_output("PATH=#{bin}:$PATH #{bin}/heat-mcp doctor-install")
   end
 end
