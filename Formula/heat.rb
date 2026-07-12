@@ -1,24 +1,24 @@
 class Heat < Formula
   desc "AI-authored programming language and policy-checked MCP builder"
   homepage "https://github.com/nchantarotwong/heat-releases"
-  version "0.9.1"
+  version "0.9.2"
 
   depends_on "node"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.1/heat-darwin-arm64.tar.gz"
-      sha256 "262004c2d355db34d900f4798547692c09594f732aeb2d0654cf09e9a0c97a55"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.2/heat-darwin-arm64.tar.gz"
+      sha256 "0dfa135f7b3c405d26c421c1e56a7ad2e14af89e8d1e4b4c0696e43bfc6637dc"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.1/heat-linux-arm64.tar.gz"
-      sha256 "c7c4cbb8ff234599f15c257052463db0f5c2dd08a5f540def3380c0157e5e8e8"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.2/heat-linux-arm64.tar.gz"
+      sha256 "bc1e72fc98429de77390d3e8ef9757ab6fe5fd58a255750637ff17ce7a796c1e"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.1/heat-linux-x86_64.tar.gz"
-      sha256 "54a513f9476d72259d448c7dd8b3a8590d026f6cde3a1602ac0160f2641ca88e"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.2/heat-linux-x86_64.tar.gz"
+      sha256 "44c64fd9a87bb7e6e996f7347ecb34eadc79a9f9a04ce310dc56c88b544e7e39"
     end
   end
 
@@ -26,12 +26,14 @@ class Heat < Formula
     libexec.install Dir["*"]
     stdlib = libexec/"bootstrap/stdlib"
     bridge = libexec/"bootstrap/runtime/playwright_bridge.js"
+    network_proxy = libexec/"bootstrap/runtime/browser_network_proxy.js"
     runtime_pkg = libexec/"bootstrap/runtime/package.json"
     runtime_lock = libexec/"bootstrap/runtime/package-lock.json"
     runtime_node_modules = libexec/"bootstrap/runtime/node_modules"
     (libexec/"stdlib").install Dir["#{stdlib}/*.heat"] if stdlib.exist?
     if bridge.exist?
       (libexec/"runtime").install bridge
+      (libexec/"runtime").install network_proxy
       (libexec/"runtime").install runtime_pkg if runtime_pkg.exist?
       (libexec/"runtime").install runtime_lock if runtime_lock.exist?
       (libexec/"runtime").install runtime_node_modules if runtime_node_modules.exist?
