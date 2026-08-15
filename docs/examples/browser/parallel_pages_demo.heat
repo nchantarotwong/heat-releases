@@ -1,0 +1,79 @@
+// parallel_pages_demo.heat — scrape several sites at once, one page each.
+//
+// The scenario: you have a list of company sites and you want the title of
+// each. Fetching them one after another means the whole job takes as long as
+// the sum of every page load. Fetching them together means it takes about as
+// long as the slowest one.
+//
+// Before v0.9.8 this was not available in-process. The bridge transport was
+// lockstep — one request on the wire at a time — so two tasks calling
+// page_goto queued behind each other even though the browser could happily
+// load both. Getting real parallelism meant running several OS processes,
+// each with its own browser.
+//
+// Now the transport multiplexes: every request carries an id, and replies are
+// matched by that id rather than by arrival order. N tasks drive N pages
+// concurrently through one browser, which is also considerably cheaper in
+// memory than N browsers.
+//
+// The one rule: a task owns its page.
+//
+//   Two concurrent operations on the SAME page id are refused with page_busy.
+//   That race lives inside Playwright itself, not in Heat's transport, so no
+//   amount of correct request/response pairing makes it safe. One page per
+//   task, and the rule takes care of itself.
+//
+// Setup:
+//   npm install playwright
+//   npx playwright install chromium
+//
+// Run:
+//   heatc run examples/browser/parallel_pages_demo.heat
+
+import browser
+
+
+// Fetch one site's title on a page of its own. Each task calls this, so each
+// call opens the page it will use and closes it when finished — page_close
+// releases just this page and leaves the browser (and every other task's
+// page) running. Calling browser_close here would tear the bridge down under
+// the other tasks.
+//
+// Returns a String rather than a Result so each task reports its own outcome
+// independently: one site being down should not abandon the other two.
+fn title_of(url: String) -> String [io]:
+    match browser_new_page():
+        Result.error(message: e):
+            return url + " -> could not open a page: " + e
+        Result.ok(value: page_id):
+            match page_goto(page_id: page_id, url: url, timeout_ms: 30000):
+                Result.error(message: e):
+                    let _c = page_close(page_id: page_id)
+                    return url + " -> navigation failed: " + e
+                Result.ok(value: _status):
+                    match page_title(page_id: page_id):
+                        Result.error(message: e):
+                            let _c = page_close(page_id: page_id)
+                            return url + " -> could not read the title: " + e
+                        Result.ok(value: title):
+                            let _c = page_close(page_id: page_id)
+                            return url + " -> " + title
+
+
+fn main() -> Int [io]:
+    let _launched = browser_launch(browser_kind: "chromium", headless: 1)!
+
+    // Every spawn gets its own page inside title_of, so these run genuinely
+    // in parallel rather than queueing on the transport.
+    concurrent:
+        let a = spawn title_of(url: "https://example.com")
+        let b = spawn title_of(url: "https://example.org")
+        let c = spawn title_of(url: "https://example.net")
+
+        print(value: await a)
+        print(value: await b)
+        print(value: await c)
+
+    // All tasks have finished, so tearing down the whole bridge is safe here.
+    let _closed = browser_close()
+    return 0
