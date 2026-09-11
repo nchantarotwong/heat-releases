@@ -1,24 +1,24 @@
 class Heat < Formula
   desc "AI-authored programming language and policy-checked MCP builder"
   homepage "https://github.com/nchantarotwong/heat-releases"
-  version "0.9.11"
 
   depends_on "node"
+  depends_on "python@3.13"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.11/heat-darwin-arm64.tar.gz"
-      sha256 "ef36ea411258b9685b6fd9700fabb2924ab1cc773b46b7c35b88b973efa1cc71"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.12/heat-darwin-arm64.tar.gz"
+      sha256 "0efdfb856a51aa931056bbf25997b8e14ccbe486aaeb0d2a0bd25988bb5d27b1"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.11/heat-linux-arm64.tar.gz"
-      sha256 "f074922295ae20e494fd5da133caf0ca831de4e2b5ed31f7b1fbd8b67793d467"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.12/heat-linux-arm64.tar.gz"
+      sha256 "113fc258bf06b8f77ac77ed16cb5060e7a61eb482eb553e0ba3786abf55e0426"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.11/heat-linux-x86_64.tar.gz"
-      sha256 "bc579df4ef28709401ce027e39b4d2ff74d3080557e8163a872bde9bb609389c"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.12/heat-linux-x86_64.tar.gz"
+      sha256 "e59ddd58871c8a2a212a378586e5d7e36e86924ee8cf75a330ecdfd6f0bfbc95"
     end
   end
 
@@ -54,7 +54,10 @@ class Heat < Formula
         esac
       }
 
-      if [ "${1:-}" = "mcp" ]; then
+      if [ "${1:-}" = "xref" ] || [ "${1:-}" = "review" ] || [ "${1:-}" = "context-pack" ]; then
+        export PATH="$HEAT_HOME/bin:$PATH"
+        exec "$HEAT_REAL" "$@"
+      elif [ "${1:-}" = "mcp" ]; then
         args=("mcp")
         shift
         if [ "$#" -gt 0 ]; then
@@ -115,6 +118,14 @@ class Heat < Formula
       export PATH="$HEAT_HOME/bin:$PATH"
       cd "$HEAT_HOME" && exec "$HEAT_REAL" "${args[@]}"
     SH
+
+    (bin/"heat-verify-context-pack").write <<~SH
+      #!/bin/bash
+      export HEAT_HOME="#{libexec}"
+      export PATH="#{Formula["python@3.13"].opt_libexec}/bin:$PATH"
+      exec bash "$HEAT_HOME/scripts/verify_context_pack.sh" "$@"
+    SH
+    chmod 0755, bin/"heat-verify-context-pack"
 
     (bin/"heat-mcp").write <<~SH
       #!/bin/bash
