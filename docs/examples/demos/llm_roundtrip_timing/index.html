@@ -6,8 +6,8 @@
   <title>Heat LLM Roundtrip Timing</title>
   <style>
     :root {
-      --bg: #0b1117;
-      --panel: #111a24;
+      --bg: #03050c;
+      --panel: #080f20;
       --text: #f8fafc;
       --muted: #a9b8ca;
       --dim: #748399;
@@ -16,7 +16,7 @@
       --red-bg: #2a1116;
       --green: #86efac;
       --green-bg: #0d2416;
-      --heat: #ff8a3d;
+      --heat: #448aff;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; }
@@ -25,10 +25,10 @@
       background:
         linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
-        linear-gradient(180deg, #101821, var(--bg));
+        linear-gradient(180deg, #050a17, var(--bg));
       background-size: 48px 48px, 48px 48px, auto;
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       padding: 34px;
     }
     main { max-width: 1160px; margin: 0 auto; }
@@ -37,14 +37,14 @@
     .eyebrow {
       display: inline-flex;
       margin-top: 32px;
-      color: #fed7aa;
-      border: 1px solid rgba(255,138,61,.34);
+      color: #acd0ff;
+      border: 1px solid rgba(68,138,255,.34);
       border-radius: 999px;
       padding: 7px 12px;
       font-size: 12px;
       letter-spacing: .12em;
       text-transform: uppercase;
-      background: rgba(255,138,61,.08);
+      background: rgba(68,138,255,.08);
     }
     h1 {
       margin: 18px 0 10px;
@@ -152,10 +152,10 @@
       margin-top: 12px;
     }
     .files a {
-      border: 1px solid rgba(255,138,61,.28);
+      border: 1px solid rgba(68,138,255,.28);
       border-radius: 6px;
       padding: 6px 9px;
-      background: rgba(255,138,61,.08);
+      background: rgba(68,138,255,.08);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 13px;
     }
@@ -170,6 +170,11 @@
       .compare, .facts { grid-template-columns: 1fr; }
       .side { min-height: auto; }
     }
+    h1, h2 { color: #85b5ff; text-transform: uppercase; font-weight: 500;
+      text-shadow: 0 0 4px #3981ff40, 0 0 22px #2463ff21; }
+    h1 .grad { background: none; color: #85b5ff; -webkit-text-fill-color: currentColor; }
+    .panel, .stagewrap, .eyebrow, .backlink { border-radius: 3px; }
+    a:focus-visible, button:focus-visible { outline: 2px solid #85b5ff; outline-offset: 4px; }
   </style>
 </head>
 <body>

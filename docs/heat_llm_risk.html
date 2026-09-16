@@ -106,7 +106,7 @@
     margin-top: 34px;
   }
   .code-card {
-    background: #120906;
+    background: var(--heat-code-bg);
     border: 1px solid var(--heat-border);
     border-radius: 10px;
     overflow: hidden;
@@ -125,13 +125,13 @@
     margin: 0;
     padding: 18px;
     overflow-x: auto;
-    color: #f6e7d8;
+    color: var(--heat-text);
     font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
     font-size: 0.9em;
     line-height: 1.55;
   }
   .callout {
-    background: linear-gradient(180deg, rgba(255,107,53,0.08), rgba(255,169,77,0.03));
+    background: var(--heat-surface);
     border: 1px solid var(--heat-border);
     border-left: 4px solid var(--heat-flame);
     border-radius: 10px;
@@ -207,11 +207,18 @@
   }
 </style>
 </head>
-<body>
+<body class="heat-public risk-page">
+<header class="site-header">
+  <a class="site-brand" href="heat_demos.html">Heat<span class="brand-dot" aria-hidden="true"></span></a>
+  <nav aria-label="Main">
+    <a href="heat_demos.html">Explore demos <span aria-hidden="true">↗</span></a>
+    <span aria-current="page">The thesis</span>
+  </nav>
+</header>
 
 <section class="section hero">
   <div class="wrap">
-    <div class="eyebrow">Not another code review bot</div>
+    <div class="eyebrow">The thesis / AI-authored software</div>
     <h1>AI is moving the software bottleneck below code review.</h1>
     <p class="hero-copy">
       Coding agents make production cheaper. Trust gets harder. Review agents
@@ -368,6 +375,14 @@ Who checked that flow?</pre>
       <div class="step">
         <div class="step-label">Compiler refusal</div>
         <div class="step-body">When the unsafe shape appears, the answer is not a warning or a style preference. The build stops until the boundary is explicit.</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Visible unfinished work</div>
+        <div class="step-body">Scoped context packs identify each unfinished calculation by file, line and column, with a declared replacement type when directly available. Missing type evidence stays unknown; a hole is never presented as a completed implementation.</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Requirements stay visible</div>
+        <div class="step-body">An opt-in review gate compares a repair with a committed baseline and refuses changes to recorded signatures, contracts, declarations or tests. Passing this gate means that surface is unchanged; it does not prove behavior is preserved or execute the tests.</div>
       </div>
     </div>
   </div>

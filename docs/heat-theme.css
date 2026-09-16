@@ -1,54 +1,167 @@
-/*
- * heat-theme.css — Heat's visual identity.
- *
- * Dark mode with orange/amber/red heat-like accents.
- * Used across slide decks, documentation, and any branded output.
- *
- * Color palette:
- *   --heat-flame:    #ff6b35   (primary accent — errors, warnings, hot elements)
- *   --heat-amber:    #ffa94d   (secondary — highlights, links, interactive)
- *   --heat-gold:     #ffd43b   (tertiary — subtle emphasis, tags)
- *   --heat-ember:    #ffb347   (warm mid-tone)
- *   --heat-safe:     #69db7c   (success, safe paths, green checks)
- *   --heat-bg:       #0a0a0a   (page background)
- *   --heat-surface:  #1a1209   (card/code background — warm dark)
- *   --heat-border:   #332211   (subtle warm borders)
- *   --heat-text:     #e0e0e0   (primary text)
- *   --heat-muted:    #888      (secondary text)
- *   --heat-dim:      #666      (tertiary text)
- *   --heat-code-bg:  #1a1209   (code block background)
+/* Heat visual identity: neon blue on a near-black instrument-panel backdrop.
+ * Canonical source; the deck generator copies this to the repository root.
+ * Semantic success/error colors remain distinct from the brand accent.
  */
-
 :root {
-    --heat-flame: #ff6b35;
-    --heat-amber: #ffa94d;
-    --heat-gold: #ffd43b;
-    --heat-ember: #ffb347;
-    --heat-safe: #69db7c;
-    --heat-bg: #0a0a0a;
-    --heat-surface: #1a1209;
-    --heat-border: #332211;
-    --heat-text: #e0e0e0;
-    --heat-muted: #888;
-    --heat-dim: #666;
-    --heat-code-bg: #1a1209;
+    --heat-flame: #448aff;
+    --heat-amber: #85b5ff;
+    --heat-gold: #c6ddff;
+    --heat-ember: #acd0ff;
+    --heat-safe: #89d7b3;
+    --heat-bg: #03050c;
+    --heat-surface: #080f20;
+    --heat-border: #263f70;
+    --heat-text: #dce8ff;
+    --heat-muted: #9eafd0;
+    --heat-dim: #8a9dbd;
+    --heat-code-bg: #050b18;
+    --heat-font: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
     --heat-gradient: linear-gradient(135deg, var(--heat-flame), var(--heat-amber), var(--heat-gold));
+    color-scheme: dark;
+}
+
+/* Public page layout. Palette and typography are shared with the decks. */
+.heat-public { -webkit-font-smoothing: antialiased; }
+.heat-public h1, .heat-public h2, .heat-public .fd-wordmark {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--heat-text);
+    letter-spacing: -0.04em;
+}
+.heat-public a { color: var(--heat-amber); }
+.heat-public :is(a, button, summary):focus-visible {
+    outline: 2px solid var(--heat-amber);
+    outline-offset: 5px;
+}
+.heat-public :is(.site-header, .fd-mark) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 0 0 24px;
+    margin: 0 0 64px;
+    border-bottom: 1px solid var(--heat-border);
+}
+.heat-public .site-header { max-width: 1120px; margin: 0 auto; padding: 30px 0; }
+.heat-public :is(.site-brand, .fd-wordmark) {
+    font-size: 23px; font-weight: 650; letter-spacing: -0.04em;
+    color: var(--heat-text); text-decoration: none;
+}
+.heat-public .brand-dot { display: inline-block; width: 6px; height: 6px; margin: 0 0 3px 6px; background: var(--heat-flame); }
+.heat-public .fd-mark img { width: 34px; height: 34px; border-radius: 4px; }
+.heat-public nav { display: flex; gap: 28px; align-items: center; margin-left: auto; font-size: 13px; }
+.heat-public nav a { text-decoration: none; color: var(--heat-muted); }
+.heat-public nav a:hover { color: var(--heat-text); }
+.heat-public nav [aria-current] { color: var(--heat-text); }
+.heat-public .eyebrow, .heat-public .topline {
+    font: 11px/1.5 'SFMono-Regular', Consolas, monospace;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--heat-amber);
+}
+.heat-public.demos-page { padding: 30px 40px 64px; }
+.heat-public .page { max-width: 1120px; }
+.heat-public .frontdoor { display: grid; grid-template-columns: 1.35fr 0.85fr; gap: 0 72px; text-align: left; }
+.heat-public .fd-mark, .heat-public .fd-scope { grid-column: 1 / -1; }
+.heat-public .fd-copy { min-width: 0; }
+.heat-public .fd-def { font-size: clamp(36px, 4vw, 58px); line-height: 1.06; font-weight: 550; margin: 16px 0 28px; }
+.heat-public .fd-def em { color: var(--heat-flame); }
+.heat-public .fd-idea { margin: 0 0 16px; font-size: 16px; line-height: 1.65; }
+.heat-public .fd-kicker { margin: 26px 0 0; font-size: 14px; }
+.heat-public .fd-pillars { display: flex; flex-direction: column; gap: 0; margin: 0; max-width: none; }
+.heat-public .fd-pillar {
+    background: none; border: 0; border-top: 1px solid var(--heat-border);
+    border-radius: 0; padding: 20px 0; transition: color 0.15s; transform: none;
+}
+.heat-public .fd-pillar:hover { background: var(--heat-surface); }
+.heat-public .fd-pillar-h { font-weight: 550; font-size: 17px; }
+.heat-public .fd-pillar-p { font-size: 14px; }
+.heat-public .fd-pillar-go { font-size: 12px; margin-top: 12px; }
+.heat-public .fd-scope { max-width: none; margin: 44px 0 0; padding-top: 24px; border-top: 1px solid var(--heat-border); }
+.heat-public .fd-scope-list { display: flex; flex-wrap: wrap; gap: 4px 28px; margin: 12px 0 20px; padding-left: 16px; }
+.heat-public .fd-scope p { max-width: 100%; font-size: 14px; }
+.heat-public .fd-divider { max-width: none; margin: 48px 0; }
+.heat-public .topline, .heat-public .headline, .heat-public .lede, .heat-public .runhint { text-align: left; margin-left: 0; }
+.heat-public .headline h2 { font-size: 40px; line-height: 1.15; margin: 12px 0 18px; font-weight: 550; }
+.heat-public .lede { font-size: 16px; max-width: 720px; margin-bottom: 32px; }
+.heat-public .feature-banner {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 32px;
+    padding: 26px 0; margin: 0; border-top: 1px solid var(--heat-border);
+    text-decoration: none; color: var(--heat-text);
+}
+.heat-public .feature-banner:hover .feature-banner-title { color: var(--heat-amber); }
+.heat-public .feature-banner-tag { font: 10px/1.5 'SFMono-Regular', Consolas, monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--heat-muted); }
+.heat-public .feature-banner-title { font-size: 23px; margin: 8px 0; font-weight: 550; }
+.heat-public .feature-banner-desc { font-size: 14px; line-height: 1.6; color: var(--heat-muted); margin: 0; max-width: 760px; }
+.heat-public .feature-banner-go { font-size: 12px; color: var(--heat-amber); }
+.heat-public .runhint { margin: 28px 0 56px; font-size: 13px; }
+.heat-public .demo-nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 36px; }
+.heat-public .demo-nav a { display: flex; align-items: center; min-height: 44px; padding: 10px 14px; border: 1px solid var(--heat-border); border-radius: 5px; background: var(--heat-surface); color: var(--heat-amber); font-size: 13px; }
+.heat-public .demo-nav a:hover { border-color: var(--heat-flame); color: var(--heat-text); }
+.heat-public .demo-group { margin-bottom: 80px; scroll-margin-top: 28px; }
+.heat-public .demo-group-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; font-size: 26px; font-weight: 600; text-transform: none; letter-spacing: -0.02em; color: var(--heat-text); padding: 0 0 16px; border-bottom: 2px solid var(--heat-border); }
+.heat-public .demo-group-count { font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--heat-muted); margin-left: auto; }
+.heat-public .demo-group-stab { font-size: 15px; font-weight: 500; }
+.heat-public .demo-group-desc { font-size: 14px; margin-bottom: 24px; }
+.heat-public .demo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.heat-public .demo-card { background: var(--heat-surface); border: 1px solid var(--heat-border); border-radius: 6px; padding: 22px; min-width: 0; gap: 10px; transform: none; }
+.heat-public .demo-card:hover { background: #16253c; border-color: var(--heat-flame); }
+.heat-public .demo-card-name { font-weight: 600; font-size: 16px; }
+.heat-public .demo-card-desc { font-size: 14px; line-height: 1.55; }
+.heat-public .demo-card-go { font-size: 12px; margin-top: auto; padding-top: 16px; }
+.heat-public .foot { text-align: left; }
+.heat-public .term-window { background: var(--heat-bg); border-color: var(--heat-border); border-radius: 6px; }
+.heat-public .term-header { background: var(--heat-surface); border-color: var(--heat-border); }
+.heat-public .term-narration { color: var(--heat-amber); background: var(--heat-surface); border-color: var(--heat-flame); font-style: normal; }
+.heat-public :is(.artifact-preview-label, .artifact-source summary) { color: var(--heat-amber); }
+.heat-public.risk-page .hero { min-height: 0; padding-top: 88px; padding-bottom: 88px; }
+.heat-public.risk-page .wrap { width: 100%; }
+.heat-public.risk-page h1 { font-size: clamp(38px, 4.7vw, 68px); font-weight: 550; max-width: 980px; line-height: 1.06; }
+.heat-public.risk-page h2 { font-size: clamp(28px, 3vw, 42px); font-weight: 550; max-width: 820px; }
+.heat-public.risk-page .hero-copy { font-size: 19px; max-width: 760px; color: var(--heat-muted); }
+.heat-public.risk-page .question { font-size: 19px; border-left-width: 2px; margin-top: 36px; max-width: 780px; }
+.heat-public.risk-page .section { padding-left: 40px; padding-right: 40px; }
+.heat-public.risk-page .tile { background: none; border: 0; border-top: 1px solid var(--heat-border); border-radius: 0; padding: 24px 0; }
+.heat-public.risk-page .grid { gap: 32px; }
+.heat-public.risk-page .code-card { border-radius: 4px; }
+.heat-public.risk-page .callout { border: 0; border-left: 2px solid var(--heat-flame); border-radius: 0; padding: 20px 24px; }
+.heat-public.risk-page .code-head.risky { color: #f1a5a5; }
+.heat-public.risk-page pre { border: 0; border-radius: 0; }
+@media (max-width: 1199px) {
+    .heat-public .site-header { margin: 0 40px; width: auto; }
+}
+@media (max-width: 800px) {
+    .heat-public.demos-page { padding: 22px 22px 48px; }
+    .heat-public .frontdoor { grid-template-columns: 1fr; gap: 0; }
+    .heat-public .fd-mark { margin-bottom: 40px; }
+    .heat-public nav { gap: 18px; font-size: 12px; }
+    .heat-public .fd-pillars { margin-top: 32px; }
+    .heat-public .fd-scope-list { display: block; }
+    .heat-public .demo-grid { grid-template-columns: 1fr; }
+    .heat-public .feature-banner { grid-template-columns: 1fr; gap: 14px; }
+    .heat-public .headline h2 { font-size: 32px; }
+    .heat-public .site-header { margin: 0 22px; padding: 24px 0; }
+    .heat-public.risk-page .section { padding: 48px 22px; }
+    .heat-public.risk-page .hero-copy, .heat-public.risk-page .question { font-size: 17px; }
+    .heat-public #demo-modal { padding: 12px; }
+    .heat-public .term-window { max-height: 92dvh; }
 }
 
 /* Base */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: var(--heat-font);
     background: var(--heat-bg);
     color: var(--heat-text);
 }
 
 /* Typography */
-h1, h2 {
-    background: var(--heat-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+body h1, body h2 {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--heat-amber);
+    font-family: var(--heat-font);
+    text-transform: uppercase;
+    text-shadow: 0 0 4px #3981ff40, 0 0 22px #2463ff21;
 }
 h1 { font-size: 3em; font-weight: 700; margin-bottom: 20px; }
 h2 { font-size: 2.2em; font-weight: 600; margin-bottom: 30px; }
@@ -120,9 +233,9 @@ pre {
 
 /* Tags */
 .tag { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600; }
-.tag-user { background: #ff6b3533; color: var(--heat-flame); border: 1px solid #ff6b3555; }
+.tag-user { background: #448aff33; color: var(--heat-flame); border: 1px solid #448aff55; }
 .tag-safe { background: #69db7c33; color: var(--heat-safe); border: 1px solid #69db7c55; }
-.tag-any { background: #ffa94d33; color: var(--heat-amber); border: 1px solid #ffa94d55; }
+.tag-any { background: #85b5ff33; color: var(--heat-amber); border: 1px solid #85b5ff55; }
 
 /* Slides */
 .slide {
@@ -140,3 +253,57 @@ pre {
 .vs > div:first-child { background: #1a0905; }
 .vs > div:last-child { background: #0f1a09; }
 .vs-label { font-size: 1.1em; font-weight: 600; margin-bottom: 10px; }
+
+
+/* Digital display treatment and catalog readout. */
+.heat-public :is(h1, h2, .fd-wordmark, .site-brand) {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    color: #85b5ff; font-weight: 500; text-transform: uppercase;
+    letter-spacing: -.045em; text-shadow: 0 0 4px #3981ff40, 0 0 22px #2463ff21;
+}
+.heat-public .fd-mark img { display: none; }
+.heat-public .fd-wordmark { font-size: 28px; letter-spacing: .14em; }
+.heat-public .fd-mark { margin-bottom: 28px; border-bottom-color: #385b94; }
+.heat-public .site-brand { letter-spacing: .12em; }
+.heat-public .digital-readout { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; gap: 40px; align-items: center; padding: 22px 28px; margin: 0 0 48px; border: 1px solid #2b4b80; background: repeating-linear-gradient(0deg, #060d1e 0, #060d1e 2px, #040916 2px, #040916 4px); box-shadow: inset 0 0 30px #000a; }
+.vfd-digits { display: block; width: 144px; height: 80px; overflow: visible; }
+.seg { fill: #10234a; }
+.seg.lit { fill: #7aafff; filter: drop-shadow(0 0 2px #3478ff88); }
+.readout-count > span, .readout-mode > span, .readout-bars > span { display: block; font-size: 10px; letter-spacing: .13em; color: #99afd2; }
+.readout-count > span { margin-top: 8px; }
+.readout-bars { display: flex; gap: 4px; flex-wrap: wrap; align-items: end; }
+.readout-bars i { flex: 1; height: 22px; background: #448aff; box-shadow: 0 0 7px #448aff35; }
+.readout-bars i:nth-child(n+18) { background: #15294b; box-shadow: none; }
+.readout-bars > span { width: 100%; margin-top: 10px; }
+.readout-mode strong { display: block; color: #acd0ff; font-size: 28px; letter-spacing: .12em; font-weight: 400; text-shadow: 0 0 9px #acd0ff40; margin: 4px 0 10px; }
+.heat-public .fd-def { font-size: clamp(34px, 3.5vw, 50px); line-height: 1.13; }
+.heat-public .fd-def em { color: #acd0ff; }
+.heat-public .fd-idea { font-size: 14px; }
+.heat-public :is(.eyebrow, .topline, .demo-group-count, .feature-banner-tag) { color: #acd0ff; letter-spacing: .1em; }
+.heat-public .fd-pillar-h { color: #85b5ff; font-size: 16px; font-weight: 500; }
+.heat-public :is(.fd-pillar-p, .feature-banner-desc) { font-size: 13px; }
+.heat-public .demo-group-title { font-size: 23px; border-bottom-color: #385b94; }
+.heat-public .demo-group-count { font-size: 10px; text-shadow: none; }
+.heat-public .demo-group-stab { font-size: 14px; }
+.heat-public .demo-group-desc { font-size: 13px; }
+.heat-public .demo-card { position: relative; border-radius: 0; background: #070e1d; border-color: #2b4b80; box-shadow: inset 0 1px #8db9ff11; }
+.heat-public .demo-card::before { content: ''; position: absolute; top: -1px; left: -1px; width: 13px; height: 13px; border-top: 2px solid #6ca4ff; border-left: 2px solid #6ca4ff; }
+.heat-public .demo-card:hover { background: #0b1a36; border-color: #8cbaff; box-shadow: 0 0 16px #3d7fff14; }
+.heat-public .demo-card-name { font-size: 15px; font-weight: 500; color: #bfd8ff; text-shadow: 0 0 6px #4a8aff29; }
+.heat-public .demo-card-desc { font-size: 13px; }
+.heat-public .demo-card-go { color: #acd0ff; letter-spacing: .08em; text-transform: uppercase; font-size: 10px; }
+.heat-public .demo-nav a { border-radius: 0; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; }
+.heat-public .demo-nav a:hover { background: #102447; }
+.heat-public .feature-banner-title { font-size: 21px; }
+.heat-public .term-window, .heat-public .term-header { border-radius: 0; }
+.heat-public.risk-page h1 { font-size: clamp(32px, 4.2vw, 60px); }
+.heat-public.risk-page h2 { font-size: clamp(25px, 2.7vw, 38px); }
+.heat-public.risk-page .hero-copy, .heat-public.risk-page .question { font-size: 17px; }
+@media (max-width: 800px) {
+    .heat-public .digital-readout { grid-template-columns: auto 1fr; gap: 20px; padding: 18px; margin-bottom: 36px; }
+    .vfd-digits { width: 108px; height: 60px; }
+    .readout-bars { display: none; }
+    .readout-mode strong { font-size: 21px; }
+    .readout-mode > span { font-size: 9px; letter-spacing: .05em; }
+    .heat-public .demo-group-title { font-size: 20px; }
+}
