@@ -1,0 +1,18 @@
+// An order needs a shipping quote. Keep the nonnegative-price contract while
+// filling the unfinished calculation; orders of at least 10000 cents ship free.
+fn shipping_cost(order_total_cents: Int) -> Int:
+    require order_total_cents >= 0, "order total cannot be negative"
+    ensure result >= 0, "shipping cost cannot be negative"
+    return todo("500 cents below 10000; otherwise free shipping")
+
+test "large orders ship free":
+    assert shipping_cost(order_total_cents: 10000) == 0
+
+test "small orders pay 500 cents":
+    assert shipping_cost(order_total_cents: 9999) == 500
+
+fn main() -> Int:
+    return 0
+
+test "entry does not run unfinished calculation":
+    assert main() == 0

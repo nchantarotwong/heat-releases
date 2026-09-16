@@ -7,18 +7,18 @@ class Heat < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.12/heat-darwin-arm64.tar.gz"
-      sha256 "0efdfb856a51aa931056bbf25997b8e14ccbe486aaeb0d2a0bd25988bb5d27b1"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.13/heat-darwin-arm64.tar.gz"
+      sha256 "b9abdbdd6f2e1839dfb1765d271676de54e94c756dcde7d1b61e6b0323514ad4"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.12/heat-linux-arm64.tar.gz"
-      sha256 "113fc258bf06b8f77ac77ed16cb5060e7a61eb482eb553e0ba3786abf55e0426"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.13/heat-linux-arm64.tar.gz"
+      sha256 "2bb5033304d5aeeb18a2156b0096e4c74f9ceda43781ee277d957c1089abf10b"
     else
-      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.12/heat-linux-x86_64.tar.gz"
-      sha256 "e59ddd58871c8a2a212a378586e5d7e36e86924ee8cf75a330ecdfd6f0bfbc95"
+      url "https://github.com/nchantarotwong/heat-releases/releases/download/v0.9.13/heat-linux-x86_64.tar.gz"
+      sha256 "a436e11e49faee84eeb940b395e1f2706b1be952b4009444f466fea05d8f55ea"
     end
   end
 

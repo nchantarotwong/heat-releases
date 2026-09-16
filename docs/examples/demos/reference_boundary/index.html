@@ -6,20 +6,20 @@
   <title>Heat AI Tool Gateway — a compile-time reference monitor for agent egress</title>
   <style>
     :root {
-      --bg: #070b16; --bg2: #0a1120; --panel: #0e1626;
+      --bg: #03050c; --bg2: #050a17; --panel: #080f20;
       --text: #eaf1ff; --muted: #93a4c8; --dim: #5b6d92;
       --line: rgba(120,150,210,.16);
-      --cyan: #67e8f9; --heat: #fb923c; --good: #6ee7a8; --bad: #fda4af;
+      --cyan: #85b5ff; --heat: #448aff; --good: #6ee7a8; --bad: #fda4af;
       --grid: rgba(120,160,230,.05);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; }
     body {
       min-height: 100vh; color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       background:
-        radial-gradient(1200px 600px at 18% -8%, rgba(103,232,249,.10), transparent 60%),
-        radial-gradient(1000px 620px at 100% 8%, rgba(251,146,60,.11), transparent 55%),
+        radial-gradient(1200px 600px at 18% -8%, rgba(68,138,255,.10), transparent 60%),
+        radial-gradient(1000px 620px at 100% 8%, rgba(68,138,255,.11), transparent 55%),
         linear-gradient(180deg, var(--bg2), var(--bg));
       padding: 44px 44px 64px;
     }
@@ -36,12 +36,12 @@
     .backlink { display: inline-block; margin-bottom: 20px; color: var(--muted);
       text-decoration: none; font-size: 14px; border: 1px solid var(--line);
       padding: 8px 15px; border-radius: 999px; transition: .15s; }
-    .backlink:hover { color: var(--text); border-color: rgba(103,232,249,.4); background: rgba(103,232,249,.06); }
+    .backlink:hover { color: var(--text); border-color: rgba(68,138,255,.4); background: rgba(68,138,255,.06); }
 
     .eyebrow {
       display: inline-flex; align-items: center; gap: 9px;
       font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--cyan);
-      border: 1px solid rgba(103,232,249,.28); background: rgba(103,232,249,.07);
+      border: 1px solid rgba(68,138,255,.28); background: rgba(68,138,255,.07);
       padding: 7px 14px; border-radius: 999px;
     }
     .eyebrow .pulse { width: 7px; height: 7px; border-radius: 999px; background: var(--cyan);
@@ -61,7 +61,7 @@
     .legend { display: flex; gap: 16px; margin-left: auto; }
     .legend span { display: inline-flex; align-items: center; gap: 7px; }
     .sw { width: 10px; height: 10px; border-radius: 999px; }
-    .sw.cyan { background: var(--cyan); box-shadow: 0 0 12px rgba(103,232,249,.7); }
+    .sw.cyan { background: var(--cyan); box-shadow: 0 0 12px rgba(68,138,255,.7); }
     .sw.good { background: var(--good); box-shadow: 0 0 12px rgba(110,231,168,.7); }
     .sw.bad { background: var(--bad); box-shadow: 0 0 12px rgba(253,164,175,.7); }
 
@@ -92,19 +92,19 @@
     .chip .flag { font-size: 12.5px; font-weight: 600; margin-left: 6px; }
     .chip .flag.atk { color: var(--bad); } .chip .flag.rep { color: var(--good); }
     /* active source call — lights the same cyan as the bus */
-    .chip.active { border-color: rgba(103,232,249,.85); background: rgba(103,232,249,.12);
-      box-shadow: 0 0 0 1px rgba(103,232,249,.5), 0 0 26px rgba(103,232,249,.28); transform: translateX(3px); }
+    .chip.active { border-color: rgba(68,138,255,.85); background: rgba(68,138,255,.12);
+      box-shadow: 0 0 0 1px rgba(68,138,255,.5), 0 0 26px rgba(68,138,255,.28); transform: translateX(3px); }
     .chip.active b { color: var(--cyan); }
 
     /* gateway */
-    .membrane { position: relative; border: 1.5px solid rgba(251,146,60,.55);
-      background: linear-gradient(180deg, rgba(251,146,60,.12), rgba(251,146,60,.03)), rgba(10,17,32,.72); }
+    .membrane { position: relative; border: 1.5px solid rgba(68,138,255,.55);
+      background: linear-gradient(180deg, rgba(68,138,255,.12), rgba(68,138,255,.03)), rgba(10,17,32,.72); }
     .membrane:before { content: "INSERTED LAYER · COMPILE-TIME"; position: absolute; top: -12px; left: 50%;
       transform: translateX(-50%); background: var(--heat); color: #1a0c02; font-size: 10.5px; font-weight: 800;
       letter-spacing: .1em; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
-    .membrane h3 { color: #fed7aa; }
-    .membrane.active { border-color: rgba(103,232,249,.8);
-      box-shadow: 0 0 0 1px rgba(103,232,249,.4), 0 0 46px rgba(103,232,249,.22); }
+    .membrane h3 { color: #acd0ff; }
+    .membrane.active { border-color: rgba(68,138,255,.8);
+      box-shadow: 0 0 0 1px rgba(68,138,255,.4), 0 0 46px rgba(68,138,255,.22); }
     .membrane.verdict-bad { border-color: rgba(253,164,175,.85);
       box-shadow: 0 0 0 1px rgba(253,164,175,.5), 0 0 46px rgba(253,164,175,.3); }
     .membrane.verdict-good { border-color: rgba(110,231,168,.8);
@@ -118,7 +118,7 @@
     .guard b { color: var(--text); }
 
     /* console: always shows the compiler terminal; fixed height so the card never resizes */
-    .console { margin-top: 16px; border-top: 1px dashed rgba(251,146,60,.32); padding-top: 13px; }
+    .console { margin-top: 16px; border-top: 1px dashed rgba(68,138,255,.32); padding-top: 13px; }
     .console-cap { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
     .console pre { margin: 0; padding: 13px; border-radius: 12px; background: #060a13; border: 1px solid var(--line);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.6;
@@ -140,12 +140,12 @@
     .foot { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 24px; }
     .card { border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; background: rgba(255,255,255,.02); }
     .card b { display: block; margin-bottom: 5px; font-size: 14px; } .card p { margin: 0; color: var(--dim); font-size: 13px; line-height: 1.45; }
-    .card.lead b { color: var(--cyan); } .card.lead { border-color: rgba(103,232,249,.22); }
-    .card a { color: var(--cyan); text-decoration: none; border-bottom: 1px solid rgba(103,232,249,.35);
+    .card.lead b { color: var(--cyan); } .card.lead { border-color: rgba(68,138,255,.22); }
+    .card a { color: var(--cyan); text-decoration: none; border-bottom: 1px solid rgba(68,138,255,.35);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .95em; }
     .card a:hover { border-bottom-color: var(--cyan); }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #fed7aa;
-      background: rgba(251,146,60,.12); padding: 1px 5px; border-radius: 6px; font-size: .92em; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #acd0ff;
+      background: rgba(68,138,255,.12); padding: 1px 5px; border-radius: 6px; font-size: .92em; }
 
     @media (max-width: 940px) {
       body { padding: 22px; }
@@ -153,6 +153,11 @@
       #fx { display: none; }
       .legend { margin-left: 0; }
     }
+    h1, h2 { color: #85b5ff; text-transform: uppercase; font-weight: 500;
+      text-shadow: 0 0 4px #3981ff40, 0 0 22px #2463ff21; }
+    h1 .grad { background: none; color: #85b5ff; -webkit-text-fill-color: currentColor; }
+    .panel, .stagewrap, .eyebrow, .backlink { border-radius: 3px; }
+    a:focus-visible, button:focus-visible { outline: 2px solid #85b5ff; outline-offset: 4px; }
   </style>
 </head>
 <body>
@@ -260,7 +265,7 @@
     return {x,y}; }
 
   // --- power buses (canvas), intensity eased toward a target set by the timeline ---
-  const TINT = { idle:'103,232,249', pass:'110,231,168', block:'253,164,175' };
+  const TINT = { idle:'68,138,255', pass:'110,231,168', block:'253,164,175' };
   let T=0;
   const bus = { L:{cur:0,tgt:0,tint:'idle'}, R:{cur:0,tgt:0,tint:'idle'} };
 
